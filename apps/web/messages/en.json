@@ -1,0 +1,62 @@
+{
+  "HomePage": {
+    "title": "Tecno Gamerz Hub",
+    "description": "The ultimate gaming platform for tournaments, content creation, and community building.",
+    "getStarted": "Get Started",
+    "viewTournaments": "View Tournaments",
+    "features": {
+      "tournaments": {
+        "title": "Tournaments",
+        "description": "Compete in organized tournaments with prize pools and rankings."
+      },
+      "content": {
+        "title": "Content Creation",
+        "description": "Share your gaming highlights and build your audience."
+      },
+      "store": {
+        "title": "Gaming Store",
+        "description": "Buy and sell gaming gear, merch, and digital items."
+      },
+      "giveaways": {
+        "title": "Giveaways",
+        "description": "Participate in exciting giveaways and win amazing prizes."
+      },
+      "community": {
+        "title": "Community",
+        "description": "Connect with fellow gamers and join the conversation."
+      },
+      "analytics": {
+        "title": "Analytics",
+        "description": "Track your performance and progress over time."
+      }
+    }
+  },
+  "Auth": {
+    "signIn": "Sign In",
+    "signOut": "Sign Out",
+    "signUp": "Sign Up",
+    "welcomeBack": "Welcome Back",
+    "signInDescription": "Sign in to your Tecno Gamerz Hub account",
+    "continueWith": "Continue with {provider}",
+    "orContinueWith": "Or continue with email"
+  },
+  "Dashboard": {
+    "title": "Dashboard",
+    "welcome": "Welcome back, {name}!",
+    "yourRank": "Your Rank",
+    "tournamentsJoined": "Tournaments Joined",
+    "videosWatched": "Videos Watched",
+    "communityPoints": "Community Points"
+  },
+  "Common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "save": "Save",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "delete": "Delete",
+    "create": "Create",
+    "update": "Update"
+  }
+}
