@@ -74,3 +74,7 @@ docker-compose.override.yml
 
 # Changeset
 .changeset/pre.json
+# Generated keys and secrets
+.env.keys
+keys/
+*.pem
