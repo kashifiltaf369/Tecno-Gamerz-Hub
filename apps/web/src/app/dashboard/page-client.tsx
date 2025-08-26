@@ -204,7 +204,7 @@ export default function DashboardPage() {
               <CardDescription>
                 Your gaming journey starts here. This is the first working feature of the platform!
               </CardDescription>
-            </CardHeader>
+            </CardContent>
             <CardContent>
               <p className="text-sm text-muted-foreground mb-4">
                 Authentication is now fully functional. You can register, login, and access your profile.

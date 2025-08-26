@@ -166,9 +166,14 @@ async function seedAdminUser() {
   }
 
   // Create new admin user
+  const hashedPassword = await hashPassword('AdminPassword123!');
+  
   const adminUser = await prisma.user.create({
     data: {
+      name: 'Admin User',
       email: adminEmail,
+      passwordHash: hashedPassword,
+      role: 'ADMIN',
       username: 'admin',
       status: 'ACTIVE',
     },

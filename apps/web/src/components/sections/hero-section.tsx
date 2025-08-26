@@ -35,7 +35,7 @@ export function HeroSection() {
               variant="gaming"
               className="text-lg font-semibold"
             >
-              <Link href="/auth/signin">
+              <Link href="/register">
                 Get Started
               </Link>
             </Button>
@@ -46,8 +46,8 @@ export function HeroSection() {
               variant="outline"
               className="text-lg"
             >
-              <Link href="/tournaments">
-                View Tournaments
+              <Link href="/login">
+                Sign In
               </Link>
             </Button>
           </div>
