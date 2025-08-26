@@ -211,8 +211,20 @@ export default function DashboardPage() {
                 More exciting features like tournaments, video uploads, and community features are coming soon!
               </p>
               <div className="flex flex-wrap gap-2">
-                <Button size="sm" disabled className="opacity-50">
-                  Join Tournament (Coming Soon)
+                <Button 
+                  size="sm"
+                  onClick={() => router.push('/tournaments')}
+                  className="bg-gaming-neon hover:bg-gaming-neon/90"
+                >
+                  View Tournaments
+                </Button>
+                <Button 
+                  size="sm"
+                  onClick={() => router.push('/tournaments/create')}
+                  variant="outline"
+                  className="border-gaming-neon/50 hover:bg-gaming-neon/10"
+                >
+                  Create Tournament
                 </Button>
                 <Button size="sm" disabled className="opacity-50">
                   Upload Video (Coming Soon)

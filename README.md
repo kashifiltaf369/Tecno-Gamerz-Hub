@@ -132,11 +132,11 @@ pnpm dev --filter=web    # Web app on http://localhost:3000
 pnpm dev --filter=api    # API server on http://localhost:3001
 ```
 
-## 🔐 Authentication System (MVP)
+## 🎮 Live Features
 
-The platform now includes a fully functional authentication system! This is the first working feature that demonstrates real functionality.
+The platform now includes fully functional gaming features! These are the working features that demonstrate real functionality.
 
-### Current Authentication Features
+### ✅ Authentication System (Complete)
 
 - ✅ **User Registration** - Create new accounts with validation
 - ✅ **User Login** - Secure credential verification
@@ -144,6 +144,17 @@ The platform now includes a fully functional authentication system! This is the 
 - ✅ **User Dashboard** - Profile management interface
 - ✅ **Role System** - ADMIN, GAMER, FAN roles
 - ✅ **Session Management** - Secure token handling
+
+### 🏆 Tournament Management (Complete)
+
+- ✅ **Tournament Creation** - Create tournaments with detailed information
+- ✅ **Tournament Listing** - Browse and filter tournaments
+- ✅ **Tournament Details** - View comprehensive tournament information
+- ✅ **Join/Leave System** - Participate in tournaments
+- ✅ **Tecno Gamerz Official Badge** - Admin tournaments marked as official
+- ✅ **Real-time Status** - Upcoming, Active, Completed tournament states
+- ✅ **Search & Filters** - Find tournaments by game, status, or search terms
+- ✅ **Participant Management** - View tournament participants
 
 ### Quick Test Drive
 
@@ -153,13 +164,21 @@ The platform now includes a fully functional authentication system! This is the 
    pnpm dev --filter=web    # Web on http://localhost:3000
    ```
 
-2. **Test the Authentication Flow**:
+2. **Test the Features**:
+   
+   **Authentication:**
    - Visit http://localhost:3000
    - Click "Get Started" to register a new account
    - Fill in your details (name, email, password)
    - Login with your credentials
    - Access your protected dashboard
-   - View your profile information
+   
+   **Tournament System:**
+   - Visit http://localhost:3000/tournaments to browse tournaments
+   - Create a new tournament (login required)
+   - Join existing tournaments
+   - View tournament details and participants
+   - Admin users will see their tournaments marked as "Tecno Gamerz Official"
 
 ### API Endpoints
 
@@ -178,6 +197,12 @@ After running `pnpm db:seed`, a default admin user will be created:
 - **Password**: AdminPassword123!
 - **Role**: ADMIN
 
+**Admin Privileges:**
+- Can create **Tecno Gamerz Official** tournaments (marked with crown badge)
+- Can edit/delete any tournament
+- Full access to user management
+- Official tournaments are featured prominently
+
 ### Authentication Architecture
 
 - **JWT Tokens**: RS256 algorithm with public/private key pairs
@@ -185,6 +210,98 @@ After running `pnpm db:seed`, a default admin user will be created:
 - **Token Storage**: localStorage (client-side) - will be moved to httpOnly cookies in production
 - **Role-Based Access**: Decorator-based route protection
 - **Input Validation**: Class-validator with custom constraints
+
+## 🏆 Tournament System (Live Feature)
+
+The tournament system is now fully implemented and allows users to create, manage, and participate in gaming tournaments.
+
+### Tournament Features
+
+- **Create Tournaments**: Any authenticated user can create tournaments
+- **Tecno Gamerz Official Badge**: Admin-created tournaments get special "Official" status with crown badge
+- **Tournament Management**: 
+  - Full CRUD operations (Create, Read, Update, Delete)
+  - Only creators or admins can edit/delete tournaments
+- **Participation System**: 
+  - Join/leave tournaments before they start
+  - View participant lists and statistics
+  - Real-time participant count updates
+
+### Tournament States
+
+- **UPCOMING**: Tournament not yet started (users can join)
+- **ACTIVE**: Tournament currently running (no new joins)
+- **COMPLETED**: Tournament finished (archived)
+
+### Tournament Pages
+
+1. **Tournament Listing** (`/tournaments`):
+   - Browse all tournaments with pagination
+   - Filter by game, status, or official tournaments
+   - Search in titles and descriptions
+   - Quick join functionality
+
+2. **Tournament Creation** (`/tournaments/create`):
+   - Rich form with validation
+   - Game selection with popular games
+   - Date/time picker with validation
+   - Admin users get automatic "Official" status
+
+3. **Tournament Details** (`/tournaments/[id]`):
+   - Comprehensive tournament information
+   - Participant list with avatars
+   - Tournament schedule and timeline
+   - Join/leave actions
+   - Edit/delete for authorized users
+
+### Database Schema
+
+```prisma
+model Tournament {
+  id                    String   @id @default(uuid())
+  title                 String
+  description           String
+  game                  String
+  startDate             DateTime
+  endDate               DateTime
+  createdById           String
+  isTecnoGamerzOfficial Boolean  @default(false)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  createdBy    User                     @relation("TournamentCreator")
+  participants TournamentParticipant[]
+}
+
+model TournamentParticipant {
+  id           String   @id @default(uuid())
+  tournamentId String
+  userId       String
+  joinedAt     DateTime @default(now())
+
+  tournament Tournament @relation(onDelete: Cascade)
+  user       User       @relation(onDelete: Cascade)
+  
+  @@unique([tournamentId, userId])
+}
+```
+
+### API Integration
+
+The frontend uses React Query for efficient data fetching and caching:
+- **GET /tournaments** - Paginated tournament listing with filters
+- **POST /tournaments** - Create new tournament
+- **GET /tournaments/:id** - Tournament details with participants
+- **POST /tournaments/:id/join** - Join tournament
+- **DELETE /tournaments/:id/leave** - Leave tournament
+
+### UI Features
+
+- **Gaming-themed Design**: Neon colors and gaming aesthetics
+- **Responsive Layout**: Works on desktop and mobile
+- **Real-time Updates**: Participant counts and status updates
+- **Accessibility**: Proper ARIA labels and keyboard navigation
+- **Loading States**: Skeleton loaders and proper error handling
 
 ## 🔧 Configuration
 
@@ -468,15 +585,15 @@ GET    /users/:id             # Get user profile
 PUT    /users/:id             # Update user profile
 DELETE /users/:id             # Delete user (ADMIN)
 
-Games:
-GET  /games                   # List games
-POST /games                   # Create game (ADMIN)
-GET  /games/:id               # Get game details
-
 Tournaments:
-GET  /tournaments             # List tournaments
-POST /tournaments             # Create tournament (GAMER+)
-GET  /tournaments/:id         # Tournament details
+GET    /tournaments           # List tournaments with filtering
+POST   /tournaments           # Create tournament (authenticated users)
+GET    /tournaments/:id       # Get tournament details
+PATCH  /tournaments/:id       # Update tournament (creator/admin)
+DELETE /tournaments/:id       # Delete tournament (creator/admin)
+POST   /tournaments/:id/join  # Join tournament
+DELETE /tournaments/:id/leave # Leave tournament
+GET    /tournaments/user/participations  # User's tournament participations
 ```
 
 ## 🏆 Performance

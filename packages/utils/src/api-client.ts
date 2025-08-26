@@ -4,7 +4,13 @@ import type {
   AuthResponse, 
   RefreshTokenResponse,
   PublicUser,
-  ApiResponse 
+  ApiResponse,
+  Tournament,
+  TournamentParticipant,
+  CreateTournamentDto,
+  UpdateTournamentDto,
+  TournamentFilters,
+  PaginatedResponse
 } from '@tecno-gamerz/types';
 
 export interface ApiClientConfig {
@@ -98,6 +104,65 @@ export class ApiClient {
     return this.request<void>('/auth/logout', {
       method: 'POST',
     });
+  }
+
+  // Tournament endpoints
+  async getTournaments(filters?: TournamentFilters): Promise<ApiResponse<PaginatedResponse<Tournament>>> {
+    const queryParams = new URLSearchParams();
+    
+    if (filters) {
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          queryParams.append(key, String(value));
+        }
+      });
+    }
+
+    const queryString = queryParams.toString();
+    const endpoint = queryString ? `/tournaments?${queryString}` : '/tournaments';
+    
+    return this.request<PaginatedResponse<Tournament>>(endpoint);
+  }
+
+  async getTournament(id: string, includeParticipants = false): Promise<ApiResponse<Tournament>> {
+    const endpoint = `/tournaments/${id}${includeParticipants ? '?includeParticipants=true' : ''}`;
+    return this.request<Tournament>(endpoint);
+  }
+
+  async createTournament(tournamentData: CreateTournamentDto): Promise<ApiResponse<Tournament>> {
+    return this.request<Tournament>('/tournaments', {
+      method: 'POST',
+      body: JSON.stringify(tournamentData),
+    });
+  }
+
+  async updateTournament(id: string, tournamentData: UpdateTournamentDto): Promise<ApiResponse<Tournament>> {
+    return this.request<Tournament>(`/tournaments/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(tournamentData),
+    });
+  }
+
+  async deleteTournament(id: string): Promise<ApiResponse<void>> {
+    return this.request<void>(`/tournaments/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async joinTournament(id: string): Promise<ApiResponse<TournamentParticipant>> {
+    return this.request<TournamentParticipant>(`/tournaments/${id}/join`, {
+      method: 'POST',
+    });
+  }
+
+  async leaveTournament(id: string): Promise<ApiResponse<void>> {
+    return this.request<void>(`/tournaments/${id}/leave`, {
+      method: 'DELETE',
+    });
+  }
+
+  async getUserTournamentParticipations(): Promise<ApiResponse<TournamentParticipant[]>> {
+    return this.request<TournamentParticipant[]>('/tournaments/user/participations');
   }
 }
 

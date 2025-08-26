@@ -30,7 +30,8 @@ model User {
   auditLogs AuditLog[]
 
   // Gaming-specific relations (for future expansion)
-  // tournaments Tournament[]
+  createdTournaments Tournament[] @relation("TournamentCreator")
+  tournamentParticipants TournamentParticipant[]
   // videos Video[]
   // orders Order[]
   // donations Donation[]
@@ -173,38 +174,30 @@ enum RoleName {
   @@map("role_name")
 }
 
-// Future models for gaming platform features
-// These are commented out but show the intended structure
-
-/*
 // Tournament system
 model Tournament {
-  id          String   @id @default(cuid())
-  title       String
-  description String?
-  game        String
-  maxPlayers  Int
-  prizePool   Decimal?
-  status      TournamentStatus @default(UPCOMING)
-  startDate   DateTime
-  endDate     DateTime?
-  createdBy   String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id                    String   @id @default(uuid())
+  title                 String
+  description           String
+  game                  String
+  startDate             DateTime
+  endDate               DateTime
+  createdById           String
+  isTecnoGamerzOfficial Boolean  @default(false)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
 
-  creator     User @relation(fields: [createdBy], references: [id])
+  createdBy    User                     @relation("TournamentCreator", fields: [createdById], references: [id])
   participants TournamentParticipant[]
 
   @@map("tournaments")
 }
 
 model TournamentParticipant {
-  id           String @id @default(cuid())
+  id           String   @id @default(uuid())
   tournamentId String
   userId       String
   joinedAt     DateTime @default(now())
-  rank         Int?
-  prize        Decimal?
 
   tournament Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
   user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -213,6 +206,10 @@ model TournamentParticipant {
   @@map("tournament_participants")
 }
 
+// Future models for gaming platform features
+// These are commented out but show the intended structure
+
+/*
 // Video/Content system
 model Video {
   id          String   @id @default(cuid())
@@ -347,15 +344,20 @@ model Comment {
 
   @@map("comments")
 }
+*/
 
-// Additional enums for future features
+// Additional enums for tournament features
 enum TournamentStatus {
   UPCOMING
   ACTIVE
   COMPLETED
   CANCELLED
+
+  @@map("tournament_status")
 }
 
+// Future enums for gaming platform features
+/*
 enum VideoStatus {
   DRAFT
   PUBLISHED
