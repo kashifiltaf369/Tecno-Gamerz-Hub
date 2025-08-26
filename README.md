@@ -132,6 +132,60 @@ pnpm dev --filter=web    # Web app on http://localhost:3000
 pnpm dev --filter=api    # API server on http://localhost:3001
 ```
 
+## 🔐 Authentication System (MVP)
+
+The platform now includes a fully functional authentication system! This is the first working feature that demonstrates real functionality.
+
+### Current Authentication Features
+
+- ✅ **User Registration** - Create new accounts with validation
+- ✅ **User Login** - Secure credential verification
+- ✅ **Protected Routes** - JWT-based route protection
+- ✅ **User Dashboard** - Profile management interface
+- ✅ **Role System** - ADMIN, GAMER, FAN roles
+- ✅ **Session Management** - Secure token handling
+
+### Quick Test Drive
+
+1. **Start the Development Servers**:
+   ```bash
+   pnpm dev --filter=api    # API on http://localhost:3001
+   pnpm dev --filter=web    # Web on http://localhost:3000
+   ```
+
+2. **Test the Authentication Flow**:
+   - Visit http://localhost:3000
+   - Click "Get Started" to register a new account
+   - Fill in your details (name, email, password)
+   - Login with your credentials
+   - Access your protected dashboard
+   - View your profile information
+
+### API Endpoints
+
+```
+POST /api/v1/auth/register    # Register new user
+POST /api/v1/auth/login       # Login user
+GET  /api/v1/auth/me          # Get current user (protected)
+POST /api/v1/auth/refresh     # Refresh access token
+```
+
+### Default Admin User
+
+After running `pnpm db:seed`, a default admin user will be created:
+- **Email**: Set via `ADMIN_EMAIL` environment variable
+- **Username**: admin
+- **Password**: AdminPassword123!
+- **Role**: ADMIN
+
+### Authentication Architecture
+
+- **JWT Tokens**: RS256 algorithm with public/private key pairs
+- **Password Security**: bcrypt hashing with 12 rounds
+- **Token Storage**: localStorage (client-side) - will be moved to httpOnly cookies in production
+- **Role-Based Access**: Decorator-based route protection
+- **Input Validation**: Class-validator with custom constraints
+
 ## 🔧 Configuration
 
 ### Environment Variables
@@ -147,7 +201,11 @@ REDIS_URL="redis://localhost:6379"
 NEXTAUTH_URL="http://localhost:3000"
 NEXTAUTH_SECRET="your-nextauth-secret"
 
-# JWT Configuration
+# JWT Configuration (Required for Authentication)
+JWT_PRIVATE_KEY="your-rsa-private-key-in-pem-format"
+JWT_PUBLIC_KEY="your-rsa-public-key-in-pem-format"
+
+# Legacy JWT secrets (still used by some parts)
 JWT_ACCESS_SECRET="your-jwt-access-secret"
 JWT_REFRESH_SECRET="your-jwt-refresh-secret"
 
