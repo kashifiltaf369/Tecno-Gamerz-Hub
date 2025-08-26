@@ -159,39 +159,51 @@ export default function DashboardPage() {
           </Card>
 
           {/* Quick Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <Card className="bg-card/50 backdrop-blur border-gaming-neon/20">
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Tournaments
+                  Points
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-2xl font-bold text-gaming-neon">0</p>
-                <p className="text-xs text-muted-foreground">Participated</p>
+                <p className="text-2xl font-bold text-gaming-neon">{user?.totalPoints || 0}</p>
+                <p className="text-xs text-muted-foreground">Total Earned</p>
               </CardContent>
             </Card>
 
             <Card className="bg-card/50 backdrop-blur border-gaming-electric/20">
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Videos
+                  Tournaments
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-2xl font-bold text-gaming-electric">0</p>
-                <p className="text-xs text-muted-foreground">Uploaded</p>
+                <p className="text-xs text-muted-foreground">Participated</p>
               </CardContent>
             </Card>
 
             <Card className="bg-card/50 backdrop-blur border-gaming-purple/20">
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Achievements
+                  Videos
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-2xl font-bold text-gaming-purple">0</p>
+                <p className="text-xs text-muted-foreground">Uploaded</p>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-card/50 backdrop-blur border-yellow-500/20">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Achievements
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-2xl font-bold text-yellow-500">0</p>
                 <p className="text-xs text-muted-foreground">Earned</p>
               </CardContent>
             </Card>
@@ -217,6 +229,13 @@ export default function DashboardPage() {
                   className="bg-gaming-neon hover:bg-gaming-neon/90"
                 >
                   View Tournaments
+                </Button>
+                <Button 
+                  size="sm"
+                  onClick={() => router.push('/leaderboard')}
+                  className="bg-gaming-electric hover:bg-gaming-electric/90"
+                >
+                  View Leaderboard
                 </Button>
                 <Button 
                   size="sm"

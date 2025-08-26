@@ -20,6 +20,7 @@ model User {
   username     String?    @unique
   image        String?
   status       UserStatus @default(ACTIVE)
+  totalPoints  Int        @default(0)
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 
@@ -32,6 +33,7 @@ model User {
   // Gaming-specific relations (for future expansion)
   createdTournaments Tournament[] @relation("TournamentCreator")
   tournamentParticipants TournamentParticipant[]
+  matchResults MatchResult[]
   // videos Video[]
   // orders Order[]
   // donations Donation[]
@@ -189,6 +191,7 @@ model Tournament {
 
   createdBy    User                     @relation("TournamentCreator", fields: [createdById], references: [id])
   participants TournamentParticipant[]
+  matchResults MatchResult[]
 
   @@map("tournaments")
 }
@@ -204,6 +207,24 @@ model TournamentParticipant {
 
   @@unique([tournamentId, userId])
   @@map("tournament_participants")
+}
+
+// Match result and scoring system
+model MatchResult {
+  id           String   @id @default(uuid())
+  tournamentId String
+  userId       String
+  score        Int
+  awardedPoints Int     // Final points awarded (with multiplier applied)
+  createdAt    DateTime @default(now())
+
+  tournament Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([tournamentId])
+  @@index([createdAt])
+  @@map("match_results")
 }
 
 // Future models for gaming platform features

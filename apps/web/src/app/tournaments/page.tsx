@@ -180,6 +180,13 @@ export default function TournamentsPage() {
                 >
                   Tournaments
                 </Button>
+                <Button 
+                  variant="ghost" 
+                  onClick={() => router.push('/leaderboard')}
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  Leaderboard
+                </Button>
               </nav>
             </div>
             <div className="flex items-center space-x-4">

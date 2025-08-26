@@ -10,7 +10,13 @@ import type {
   CreateTournamentDto,
   UpdateTournamentDto,
   TournamentFilters,
-  PaginatedResponse
+  PaginatedResponse,
+  MatchResult,
+  CreateMatchResultDto,
+  CreateBulkMatchResultsDto,
+  GlobalLeaderboardResponse,
+  UserRankStats,
+  LeaderboardFilters
 } from '@tecno-gamerz/types';
 
 export interface ApiClientConfig {
@@ -163,6 +169,52 @@ export class ApiClient {
 
   async getUserTournamentParticipations(): Promise<ApiResponse<TournamentParticipant[]>> {
     return this.request<TournamentParticipant[]>('/tournaments/user/participations');
+  }
+
+  // Match results endpoints
+  async createMatchResult(matchResultData: CreateMatchResultDto): Promise<ApiResponse<MatchResult>> {
+    return this.request<MatchResult>(`/tournaments/${matchResultData.tournamentId}/results`, {
+      method: 'POST',
+      body: JSON.stringify({
+        userId: matchResultData.userId,
+        score: matchResultData.score,
+      }),
+    });
+  }
+
+  async createBulkMatchResults(bulkData: CreateBulkMatchResultsDto): Promise<ApiResponse<MatchResult[]>> {
+    return this.request<MatchResult[]>(`/tournaments/${bulkData.tournamentId}/results/bulk`, {
+      method: 'POST',
+      body: JSON.stringify({
+        results: bulkData.results,
+      }),
+    });
+  }
+
+  async getTournamentResults(tournamentId: string): Promise<ApiResponse<MatchResult[]>> {
+    return this.request<MatchResult[]>(`/tournaments/${tournamentId}/results`);
+  }
+
+  // Leaderboard endpoints
+  async getGlobalLeaderboard(filters?: LeaderboardFilters): Promise<ApiResponse<GlobalLeaderboardResponse>> {
+    const queryParams = new URLSearchParams();
+    
+    if (filters) {
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          queryParams.append(key, String(value));
+        }
+      });
+    }
+
+    const queryString = queryParams.toString();
+    const endpoint = queryString ? `/leaderboard?${queryString}` : '/leaderboard';
+    
+    return this.request<GlobalLeaderboardResponse>(endpoint);
+  }
+
+  async getUserRankStats(userId: string): Promise<ApiResponse<UserRankStats>> {
+    return this.request<UserRankStats>(`/leaderboard/${userId}`);
   }
 }
 

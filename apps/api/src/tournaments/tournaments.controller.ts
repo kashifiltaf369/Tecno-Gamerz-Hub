@@ -21,11 +21,11 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 import { TournamentsService } from './tournaments.service';
-import { CreateTournamentDto, UpdateTournamentDto, TournamentFiltersDto } from './dto/tournament.dto';
+import { CreateTournamentDto, UpdateTournamentDto, TournamentFiltersDto, CreateMatchResultDto, CreateBulkMatchResultsDto } from './dto/tournament.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
-import { Tournament, TournamentParticipant, PaginatedResponse, RoleName } from '@tecno-gamerz/types';
+import { Tournament, TournamentParticipant, PaginatedResponse, RoleName, MatchResult } from '@tecno-gamerz/types';
 
 @ApiTags('tournaments')
 @Controller('tournaments')
@@ -236,5 +236,90 @@ export class TournamentsController {
   })
   async getUserParticipations(@Request() req: any): Promise<TournamentParticipant[]> {
     return this.tournamentsService.getUserParticipations(req.user.sub);
+  }
+
+  // Match Results Endpoints
+  @Post(':id/results')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(RoleName.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Create match result for a tournament (Admin only)' })
+  @ApiParam({ name: 'id', description: 'Tournament ID' })
+  @ApiResponse({ 
+    status: 201, 
+    description: 'Match result created successfully',
+    type: Object 
+  })
+  @ApiResponse({ 
+    status: 400, 
+    description: 'Bad request - Invalid match result data' 
+  })
+  @ApiResponse({ 
+    status: 401, 
+    description: 'Unauthorized - JWT token required' 
+  })
+  @ApiResponse({ 
+    status: 403, 
+    description: 'Forbidden - Admin access required' 
+  })
+  @ApiResponse({ 
+    status: 404, 
+    description: 'Tournament or user not found' 
+  })
+  async createMatchResult(
+    @Param('id') tournamentId: string,
+    @Body() createMatchResultDto: CreateMatchResultDto,
+  ): Promise<MatchResult> {
+    return this.tournamentsService.createMatchResult(tournamentId, createMatchResultDto);
+  }
+
+  @Post(':id/results/bulk')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(RoleName.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Create multiple match results for a tournament (Admin only)' })
+  @ApiParam({ name: 'id', description: 'Tournament ID' })
+  @ApiResponse({ 
+    status: 201, 
+    description: 'Match results created successfully',
+    type: [Object] 
+  })
+  @ApiResponse({ 
+    status: 400, 
+    description: 'Bad request - Invalid match results data' 
+  })
+  @ApiResponse({ 
+    status: 401, 
+    description: 'Unauthorized - JWT token required' 
+  })
+  @ApiResponse({ 
+    status: 403, 
+    description: 'Forbidden - Admin access required' 
+  })
+  @ApiResponse({ 
+    status: 404, 
+    description: 'Tournament not found' 
+  })
+  async createBulkMatchResults(
+    @Param('id') tournamentId: string,
+    @Body() createBulkMatchResultsDto: CreateBulkMatchResultsDto,
+  ): Promise<MatchResult[]> {
+    return this.tournamentsService.createBulkMatchResults(tournamentId, createBulkMatchResultsDto);
+  }
+
+  @Get(':id/results')
+  @ApiOperation({ summary: 'Get match results for a tournament' })
+  @ApiParam({ name: 'id', description: 'Tournament ID' })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Match results retrieved successfully',
+    type: [Object] 
+  })
+  @ApiResponse({ 
+    status: 404, 
+    description: 'Tournament not found' 
+  })
+  async getTournamentResults(@Param('id') tournamentId: string): Promise<MatchResult[]> {
+    return this.tournamentsService.getTournamentResults(tournamentId);
   }
 }

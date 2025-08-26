@@ -7,9 +7,13 @@ import {
   IsBoolean,
   IsEnum,
   IsUUID,
+  IsNumber,
+  IsArray,
+  ValidateNested,
+  Min,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Transform } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import { TournamentStatus } from '@tecno-gamerz/types/tournaments';
 
 export class CreateTournamentDto {
@@ -177,4 +181,49 @@ export class JoinTournamentDto {
   })
   @IsUUID()
   tournamentId: string;
+}
+
+export class CreateMatchResultDto {
+  @ApiProperty({ 
+    example: '123e4567-e89b-12d3-a456-426614174001', 
+    description: 'User ID who achieved this score' 
+  })
+  @IsUUID()
+  userId: string;
+
+  @ApiProperty({ 
+    example: 2500, 
+    description: 'User score in the tournament' 
+  })
+  @IsNumber()
+  @Min(0)
+  score: number;
+}
+
+export class BulkMatchResultDto {
+  @ApiProperty({ 
+    example: '123e4567-e89b-12d3-a456-426614174001', 
+    description: 'User ID who achieved this score' 
+  })
+  @IsUUID()
+  userId: string;
+
+  @ApiProperty({ 
+    example: 2500, 
+    description: 'User score in the tournament' 
+  })
+  @IsNumber()
+  @Min(0)
+  score: number;
+}
+
+export class CreateBulkMatchResultsDto {
+  @ApiProperty({ 
+    type: [BulkMatchResultDto],
+    description: 'Array of match results to create' 
+  })
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => BulkMatchResultDto)
+  results: BulkMatchResultDto[];
 }

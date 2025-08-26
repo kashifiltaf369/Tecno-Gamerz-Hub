@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException, ConflictException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../common/services/prisma.service';
-import { CreateTournamentDto, UpdateTournamentDto, TournamentFiltersDto } from './dto/tournament.dto';
-import { Tournament, TournamentParticipant, PaginatedResponse, RoleName } from '@tecno-gamerz/types';
+import { CreateTournamentDto, UpdateTournamentDto, TournamentFiltersDto, CreateMatchResultDto, CreateBulkMatchResultsDto } from './dto/tournament.dto';
+import { Tournament, TournamentParticipant, PaginatedResponse, RoleName, MatchResult } from '@tecno-gamerz/types';
 import { Prisma } from '@prisma/client';
 
 @Injectable()
@@ -434,5 +434,235 @@ export class TournamentsService {
     });
 
     return participations as TournamentParticipant[];
+  }
+
+  // Match Results methods
+  async createMatchResult(tournamentId: string, createMatchResultDto: CreateMatchResultDto): Promise<MatchResult> {
+    const { userId, score } = createMatchResultDto;
+
+    // Verify tournament exists
+    const tournament = await this.prisma.tournament.findUnique({
+      where: { id: tournamentId },
+      select: { 
+        id: true, 
+        title: true, 
+        isTecnoGamerzOfficial: true,
+      },
+    });
+
+    if (!tournament) {
+      throw new NotFoundException('Tournament not found');
+    }
+
+    // Verify user exists
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, totalPoints: true },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Verify user is a participant
+    const participant = await this.prisma.tournamentParticipant.findUnique({
+      where: {
+        tournamentId_userId: {
+          tournamentId,
+          userId,
+        },
+      },
+    });
+
+    if (!participant) {
+      throw new BadRequestException('User is not a participant of this tournament');
+    }
+
+    // Calculate awarded points with multiplier
+    const baseMultiplier = 1.0;
+    const officialMultiplier = tournament.isTecnoGamerzOfficial ? 1.5 : 1.0;
+    const awardedPoints = Math.floor(score * baseMultiplier * officialMultiplier);
+
+    // Use transaction to create match result and update user points
+    const result = await this.prisma.$transaction(async (prisma) => {
+      // Create match result
+      const matchResult = await prisma.matchResult.create({
+        data: {
+          tournamentId,
+          userId,
+          score,
+          awardedPoints,
+        },
+        include: {
+          tournament: {
+            select: {
+              id: true,
+              title: true,
+              game: true,
+              isTecnoGamerzOfficial: true,
+            },
+          },
+          user: {
+            select: {
+              id: true,
+              name: true,
+              username: true,
+              image: true,
+            },
+          },
+        },
+      });
+
+      // Update user's total points
+      await prisma.user.update({
+        where: { id: userId },
+        data: {
+          totalPoints: {
+            increment: awardedPoints,
+          },
+        },
+      });
+
+      return matchResult;
+    });
+
+    return result as MatchResult;
+  }
+
+  async createBulkMatchResults(tournamentId: string, createBulkMatchResultsDto: CreateBulkMatchResultsDto): Promise<MatchResult[]> {
+    const { results } = createBulkMatchResultsDto;
+
+    // Verify tournament exists
+    const tournament = await this.prisma.tournament.findUnique({
+      where: { id: tournamentId },
+      select: { 
+        id: true, 
+        title: true, 
+        isTecnoGamerzOfficial: true,
+      },
+    });
+
+    if (!tournament) {
+      throw new NotFoundException('Tournament not found');
+    }
+
+    // Verify all users exist and are participants
+    const userIds = results.map(result => result.userId);
+    const users = await this.prisma.user.findMany({
+      where: { id: { in: userIds } },
+      select: { id: true, totalPoints: true },
+    });
+
+    if (users.length !== userIds.length) {
+      throw new BadRequestException('One or more users not found');
+    }
+
+    const participants = await this.prisma.tournamentParticipant.findMany({
+      where: {
+        tournamentId,
+        userId: { in: userIds },
+      },
+    });
+
+    if (participants.length !== userIds.length) {
+      throw new BadRequestException('One or more users are not participants of this tournament');
+    }
+
+    // Calculate awarded points with multiplier
+    const baseMultiplier = 1.0;
+    const officialMultiplier = tournament.isTecnoGamerzOfficial ? 1.5 : 1.0;
+
+    const matchResultsData = results.map(result => ({
+      tournamentId,
+      userId: result.userId,
+      score: result.score,
+      awardedPoints: Math.floor(result.score * baseMultiplier * officialMultiplier),
+    }));
+
+    // Use transaction to create all match results and update user points
+    const createdResults = await this.prisma.$transaction(async (prisma) => {
+      // Create all match results
+      const matchResults = await Promise.all(
+        matchResultsData.map(data => 
+          prisma.matchResult.create({
+            data,
+            include: {
+              tournament: {
+                select: {
+                  id: true,
+                  title: true,
+                  game: true,
+                  isTecnoGamerzOfficial: true,
+                },
+              },
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  username: true,
+                  image: true,
+                },
+              },
+            },
+          })
+        )
+      );
+
+      // Update all user points
+      await Promise.all(
+        matchResultsData.map(data => 
+          prisma.user.update({
+            where: { id: data.userId },
+            data: {
+              totalPoints: {
+                increment: data.awardedPoints,
+              },
+            },
+          })
+        )
+      );
+
+      return matchResults;
+    });
+
+    return createdResults as MatchResult[];
+  }
+
+  async getTournamentResults(tournamentId: string): Promise<MatchResult[]> {
+    // Verify tournament exists
+    const tournament = await this.prisma.tournament.findUnique({
+      where: { id: tournamentId },
+    });
+
+    if (!tournament) {
+      throw new NotFoundException('Tournament not found');
+    }
+
+    const results = await this.prisma.matchResult.findMany({
+      where: { tournamentId },
+      include: {
+        tournament: {
+          select: {
+            id: true,
+            title: true,
+            game: true,
+            isTecnoGamerzOfficial: true,
+          },
+        },
+        user: {
+          select: {
+            id: true,
+            name: true,
+            username: true,
+            image: true,
+          },
+        },
+      },
+      orderBy: {
+        score: 'desc',
+      },
+    });
+
+    return results as MatchResult[];
   }
 }

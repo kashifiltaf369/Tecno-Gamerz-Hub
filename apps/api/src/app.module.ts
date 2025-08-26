@@ -9,6 +9,7 @@ import { UsersModule } from './users/users.module';
 import { RbacModule } from './rbac/rbac.module';
 import { QueueModule } from './queue/queue.module';
 import { TournamentsModule } from './tournaments/tournaments.module';
+import { LeaderboardModule } from './leaderboard/leaderboard.module';
 import { configuration } from './config/configuration';
 import { validationSchema } from './config/validation';
 import { IS_PRODUCTION } from '@tecno-gamerz/utils/constants';
@@ -100,6 +101,7 @@ import { IS_PRODUCTION } from '@tecno-gamerz/utils/constants';
     RbacModule,
     QueueModule,
     TournamentsModule,
+    LeaderboardModule,
   ],
   controllers: [],
   providers: [],

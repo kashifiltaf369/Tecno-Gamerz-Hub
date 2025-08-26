@@ -156,6 +156,16 @@ The platform now includes fully functional gaming features! These are the workin
 - ✅ **Search & Filters** - Find tournaments by game, status, or search terms
 - ✅ **Participant Management** - View tournament participants
 
+### 🏅 Leaderboard & Scoring System (Complete)
+
+- ✅ **Points System** - Users earn points from tournament results
+- ✅ **Official Tournament Bonus** - Tecno Gamerz Official tournaments provide 1.5x point multiplier
+- ✅ **Global Leaderboard** - Real-time rankings of top players
+- ✅ **User Profiles** - Individual rank stats and points breakdown
+- ✅ **Recent Match Results** - Track latest tournament performances
+- ✅ **Points Breakdown** - View points from official vs regular tournaments
+- ✅ **Admin Match Recording** - Admins can record tournament results and scores
+
 ### Quick Test Drive
 
 1. **Start the Development Servers**:
@@ -214,6 +224,10 @@ After running `pnpm db:seed`, a default admin user will be created:
 ## 🏆 Tournament System (Live Feature)
 
 The tournament system is now fully implemented and allows users to create, manage, and participate in gaming tournaments.
+
+## 🏅 Leaderboard & Scoring System (Live Feature)
+
+The leaderboard system tracks user performance and rankings based on tournament results with an intelligent scoring mechanism.
 
 ### Tournament Features
 
@@ -284,6 +298,18 @@ model TournamentParticipant {
   
   @@unique([tournamentId, userId])
 }
+
+model MatchResult {
+  id           String   @id @default(uuid())
+  tournamentId String
+  userId       String
+  score        Int
+  awardedPoints Int     // Final points awarded (with multiplier applied)
+  createdAt    DateTime @default(now())
+
+  tournament Tournament @relation(onDelete: Cascade)
+  user       User       @relation(onDelete: Cascade)
+}
 ```
 
 ### API Integration
@@ -294,6 +320,10 @@ The frontend uses React Query for efficient data fetching and caching:
 - **GET /tournaments/:id** - Tournament details with participants
 - **POST /tournaments/:id/join** - Join tournament
 - **DELETE /tournaments/:id/leave** - Leave tournament
+- **POST /tournaments/:id/results** - Record match result (Admin only)
+- **POST /tournaments/:id/results/bulk** - Record multiple match results (Admin only)
+- **GET /leaderboard** - Global leaderboard rankings
+- **GET /leaderboard/:userId** - User rank and stats
 
 ### UI Features
 
@@ -302,6 +332,28 @@ The frontend uses React Query for efficient data fetching and caching:
 - **Real-time Updates**: Participant counts and status updates
 - **Accessibility**: Proper ARIA labels and keyboard navigation
 - **Loading States**: Skeleton loaders and proper error handling
+
+### Scoring System Rules
+
+#### Point Calculation
+- **Base Points**: Points = User Score × Base Multiplier (1.0)
+- **Official Tournament Bonus**: For Tecno Gamerz Official tournaments, points are multiplied by 1.5
+- **Final Formula**: `Awarded Points = Score × Base Multiplier × Official Multiplier`
+
+#### Tournament Types
+- **Regular Tournaments**: Created by any user, 1.0x point multiplier
+- **Tecno Gamerz Official**: Created by admins, 1.5x point multiplier (marked with crown badge)
+
+#### Leaderboard Features
+- **Global Rankings**: Top 50 users ranked by total points
+- **Live Updates**: Real-time point calculations and rank updates
+- **User Profiles**: Detailed breakdown of points from official vs regular tournaments
+- **Achievement Tracking**: Special recognition for users with official tournament points
+
+#### Admin Controls
+- **Match Result Recording**: Admins can record individual or bulk tournament results
+- **Automatic Point Calculation**: System automatically applies multipliers and updates user totals
+- **Score Validation**: Users must be tournament participants to receive points
 
 ## 🔧 Configuration
 
