@@ -166,6 +166,16 @@ The platform now includes fully functional gaming features! These are the workin
 - ✅ **Points Breakdown** - View points from official vs regular tournaments
 - ✅ **Admin Match Recording** - Admins can record tournament results and scores
 
+### 🎮 Gamified XP, Levels & Badges (Complete)
+
+- ✅ **XP System** - Users earn experience points from gaming activities
+- ✅ **Level Progression** - Automatic level ups every 1000 XP
+- ✅ **Achievement Badges** - Earn badges for milestones and accomplishments
+- ✅ **Tecno Gamerz Bonus XP** - Official tournaments provide +25% XP bonus
+- ✅ **Profile Gamification** - Enhanced profile pages with XP bars and badges
+- ✅ **Level Display** - User levels shown throughout the platform
+- ✅ **Badge Collection** - Track progress towards earning all badges
+
 ### Quick Test Drive
 
 1. **Start the Development Servers**:
@@ -229,6 +239,10 @@ The tournament system is now fully implemented and allows users to create, manag
 
 The leaderboard system tracks user performance and rankings based on tournament results with an intelligent scoring mechanism.
 
+## 🎮 Gamified XP, Levels & Badges System (Live Feature)
+
+The gamification system provides an engaging progression experience for users through Experience Points (XP), level advancement, and achievement badges.
+
 ### Tournament Features
 
 - **Create Tournaments**: Any authenticated user can create tournaments
@@ -271,6 +285,15 @@ The leaderboard system tracks user performance and rankings based on tournament 
 ### Database Schema
 
 ```prisma
+model User {
+  // ... existing fields ...
+  totalPoints  Int        @default(0)
+  xp           Int        @default(0)      // NEW: Experience points
+  level        Int        @default(1)      // NEW: User level
+  badges       Json       @default("[]")   // NEW: Achievement badges
+  // ... relations ...
+}
+
 model Tournament {
   id                    String   @id @default(uuid())
   title                 String
@@ -318,12 +341,14 @@ The frontend uses React Query for efficient data fetching and caching:
 - **GET /tournaments** - Paginated tournament listing with filters
 - **POST /tournaments** - Create new tournament
 - **GET /tournaments/:id** - Tournament details with participants
-- **POST /tournaments/:id/join** - Join tournament
+- **POST /tournaments/:id/join** - Join tournament (awards XP)
 - **DELETE /tournaments/:id/leave** - Leave tournament
-- **POST /tournaments/:id/results** - Record match result (Admin only)
-- **POST /tournaments/:id/results/bulk** - Record multiple match results (Admin only)
-- **GET /leaderboard** - Global leaderboard rankings
+- **POST /tournaments/:id/results** - Record match result (Admin only, awards XP)
+- **POST /tournaments/:id/results/bulk** - Record multiple match results (Admin only, awards XP)
+- **GET /leaderboard** - Global leaderboard rankings with levels
 - **GET /leaderboard/:userId** - User rank and stats
+- **GET /leaderboard/xp/top** - XP-based leaderboard
+- **GET /users/profile/:id** - Complete user profile with XP, level, and badges
 
 ### UI Features
 
@@ -354,6 +379,42 @@ The frontend uses React Query for efficient data fetching and caching:
 - **Match Result Recording**: Admins can record individual or bulk tournament results
 - **Automatic Point Calculation**: System automatically applies multipliers and updates user totals
 - **Score Validation**: Users must be tournament participants to receive points
+
+### XP and Leveling System
+
+#### XP Earning Rules
+- **Join Tournament**: +50 XP
+- **Participate in Match**: +100 XP  
+- **Win Tournament**: +500 XP
+- **Tecno Gamerz Official Bonus**: +25% XP for official tournaments
+
+#### Level System
+- **Formula**: Level = floor(Total XP / 1000) + 1
+- **Level Examples**:
+  - Level 1: 0 - 999 XP
+  - Level 2: 1000 - 1999 XP  
+  - Level 3: 2000 - 2999 XP
+- **Max Level**: 100 (future-proofed)
+
+#### Achievement Badges
+- **🎮 Rookie**: Create account (Common)
+- **⚔️ Contender**: Join first tournament (Common)
+- **🏆 Champion**: Win first tournament (Rare)
+- **👑 Tecno Fan**: Join official Tecno Gamerz tournament (Epic)
+
+### Gamification Features
+
+#### Profile Enhancement
+- **XP Progress Bar**: Visual progress towards next level
+- **Badge Collection**: Display earned badges with tooltips
+- **Level Display**: Prominent level indicator in profile
+- **Achievement Grid**: Track progress towards all badges
+
+#### Platform Integration
+- **Leaderboard Levels**: User levels shown on global leaderboard
+- **Tournament XP**: Real-time XP earning during tournament participation
+- **Badge Notifications**: Visual feedback when earning new badges
+- **Progress Tracking**: Detailed XP and level statistics
 
 ## 🔧 Configuration
 

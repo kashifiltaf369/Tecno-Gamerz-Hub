@@ -12,12 +12,16 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 import { LeaderboardService } from './leaderboard.service';
+import { GamificationService } from '../common/services/gamification.service';
 import { GlobalLeaderboardResponse, UserRankStats, LeaderboardFilters } from '@tecno-gamerz/types';
 
 @ApiTags('leaderboard')
 @Controller('leaderboard')
 export class LeaderboardController {
-  constructor(private readonly leaderboardService: LeaderboardService) {}
+  constructor(
+    private readonly leaderboardService: LeaderboardService,
+    private readonly gamificationService: GamificationService
+  ) {}
 
   @Get()
   @ApiOperation({ summary: 'Get global leaderboard' })
@@ -46,5 +50,17 @@ export class LeaderboardController {
   })
   async getUserRankStats(@Param('userId') userId: string): Promise<UserRankStats> {
     return this.leaderboardService.getUserRankStats(userId);
+  }
+
+  @Get('xp/top')
+  @ApiOperation({ summary: 'Get XP leaderboard' })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'XP leaderboard retrieved successfully',
+  })
+  @ApiQuery({ name: 'limit', required: false, description: 'Number of entries to return (max 100)' })
+  async getXpLeaderboard(@Query('limit') limit?: number) {
+    const safeLimit = Math.min(limit || 50, 100);
+    return this.gamificationService.getXpLeaderboard(safeLimit);
   }
 }

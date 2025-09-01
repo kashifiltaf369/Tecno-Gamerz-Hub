@@ -8,9 +8,11 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Progress } from '@/components/ui/progress';
+import XpProgressBar from '@/components/gamification/XpProgressBar';
+import BadgeDisplay, { AllBadgesGrid } from '@/components/gamification/BadgeDisplay';
 import { createBrowserApiClient } from '@tecno-gamerz/utils';
-import type { PublicUser, UserRankStats, MatchResult } from '@tecno-gamerz/types';
-import { Trophy, Crown, Medal, Users, Target, Star, Calendar, Gamepad2, TrendingUp } from 'lucide-react';
+import type { PublicUser, UserRankStats, MatchResult, UserGameProfile, ProfileStats } from '@tecno-gamerz/types';
+import { Trophy, Crown, Medal, Users, Target, Star, Calendar, Gamepad2, TrendingUp, Zap, Award } from 'lucide-react';
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -19,6 +21,8 @@ export default function ProfilePage() {
   
   const [currentUser, setCurrentUser] = useState<PublicUser | null>(null);
   const [userStats, setUserStats] = useState<UserRankStats | null>(null);
+  const [gameProfile, setGameProfile] = useState<UserGameProfile | null>(null);
+  const [profileStats, setProfileStats] = useState<ProfileStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string>('');
 
@@ -52,15 +56,31 @@ export default function ProfilePage() {
   const loadUserStats = async () => {
     try {
       setIsLoading(true);
-      const response = await apiClient.getUserRankStats(userId);
+      
+      // Load both leaderboard stats and game profile
+      const [statsResponse, profileResponse] = await Promise.all([
+        apiClient.getUserRankStats(userId),
+        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/v1/users/profile/${userId}`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+          },
+        }).then(res => res.json()).catch(() => ({ success: false }))
+      ]);
 
-      if (response.success && response.data) {
-        setUserStats(response.data);
-      } else {
-        setError('Failed to load user stats');
+      if (statsResponse.success && statsResponse.data) {
+        setUserStats(statsResponse.data);
+      }
+
+      if (profileResponse.success && profileResponse.data) {
+        setGameProfile(profileResponse.data.gameProfile);
+        setProfileStats(profileResponse.data.stats);
+      }
+
+      if (!statsResponse.success && !profileResponse.success) {
+        setError('Failed to load user profile');
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load user stats');
+      setError(err instanceof Error ? err.message : 'Failed to load user profile');
     } finally {
       setIsLoading(false);
     }
@@ -255,14 +275,82 @@ export default function ProfilePage() {
                           <p className="text-2xl font-bold text-gaming-purple">{userStats.percentile}%</p>
                           <p className="text-xs text-muted-foreground">Percentile</p>
                         </div>
+                        {gameProfile && (
+                          <div className="text-center">
+                            <p className="text-2xl font-bold text-yellow-500">
+                              Lv.{gameProfile.level}
+                            </p>
+                            <p className="text-xs text-muted-foreground">Level</p>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
                 </CardHeader>
               </Card>
 
+              {/* XP Progress and Badges */}
+              {gameProfile && (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* XP Progress */}
+                  <Card className="bg-card/50 backdrop-blur border-gaming-neon/20">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Zap className="w-5 h-5 text-gaming-electric" />
+                        Experience Progress
+                      </CardTitle>
+                      <CardDescription>
+                        Level progression and XP statistics
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <XpProgressBar 
+                        levelInfo={gameProfile.levelInfo}
+                        totalXp={gameProfile.xp}
+                        showDetails={true}
+                      />
+                    </CardContent>
+                  </Card>
+
+                  {/* Badges */}
+                  <Card className="bg-card/50 backdrop-blur border-gaming-purple/20">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Award className="w-5 h-5 text-gaming-purple" />
+                        Achievement Badges
+                      </CardTitle>
+                      <CardDescription>
+                        Earned badges and accomplishments
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <BadgeDisplay 
+                        badges={gameProfile.badges}
+                        showAllBadges={true}
+                        size="md"
+                      />
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+
+              {/* All Badges Grid */}
+              {gameProfile && (
+                <Card className="bg-card/50 backdrop-blur border-gaming-neon/20">
+                  <CardHeader>
+                    <CardTitle>Badge Collection</CardTitle>
+                    <CardDescription>
+                      Track your progress towards earning all badges
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <AllBadgesGrid earnedBadges={gameProfile.badges} />
+                  </CardContent>
+                </Card>
+              )}
+
               {/* Stats Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                 <Card className="bg-card/50 backdrop-blur border-gaming-neon/20">
                   <CardContent className="flex items-center p-4">
                     <Users className="w-8 h-8 text-gaming-neon mr-3" />
@@ -310,6 +398,34 @@ export default function ProfilePage() {
                     </div>
                   </CardContent>
                 </Card>
+
+                {profileStats && (
+                  <>
+                    <Card className="bg-card/50 backdrop-blur border-blue-500/20">
+                      <CardContent className="flex items-center p-4">
+                        <Gamepad2 className="w-8 h-8 text-blue-500 mr-3" />
+                        <div>
+                          <p className="text-xl font-bold text-blue-500">
+                            {profileStats.totalTournaments}
+                          </p>
+                          <p className="text-xs text-muted-foreground">Tournaments</p>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="bg-card/50 backdrop-blur border-green-500/20">
+                      <CardContent className="flex items-center p-4">
+                        <Target className="w-8 h-8 text-green-500 mr-3" />
+                        <div>
+                          <p className="text-xl font-bold text-green-500">
+                            {profileStats.winRate}%
+                          </p>
+                          <p className="text-xs text-muted-foreground">Win Rate</p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </>
+                )}
               </div>
 
               {/* Points Breakdown */}

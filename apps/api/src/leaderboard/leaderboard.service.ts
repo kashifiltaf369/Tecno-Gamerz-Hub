@@ -1,10 +1,14 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../common/services/prisma.service';
+import { GamificationService } from '../common/services/gamification.service';
 import { GlobalLeaderboardResponse, UserRankStats, LeaderboardFilters, LeaderboardEntry, MatchResult } from '@tecno-gamerz/types';
 
 @Injectable()
 export class LeaderboardService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly gamificationService: GamificationService
+  ) {}
 
   async getGlobalLeaderboard(filters: LeaderboardFilters): Promise<GlobalLeaderboardResponse> {
     const { limit = 50, offset = 0 } = filters;
@@ -12,7 +16,7 @@ export class LeaderboardService {
     // Ensure limit doesn't exceed 100
     const safeLimit = Math.min(limit, 100);
 
-    // Get top users by total points
+    // Get top users by total points including XP and level
     const users = await this.prisma.user.findMany({
       select: {
         id: true,
@@ -20,6 +24,8 @@ export class LeaderboardService {
         username: true,
         image: true,
         totalPoints: true,
+        xp: true,
+        level: true,
         matchResults: {
           select: {
             tournament: {
@@ -51,7 +57,7 @@ export class LeaderboardService {
       },
     });
 
-    // Transform to leaderboard entries with ranks
+    // Transform to leaderboard entries with ranks including XP and level
     const entries: LeaderboardEntry[] = users.map((user, index) => ({
       rank: offset + index + 1,
       user: {
@@ -59,6 +65,8 @@ export class LeaderboardService {
         name: user.name,
         username: user.username,
         image: user.image,
+        level: user.level, // Include level in user data
+        xp: user.xp, // Include XP in user data
       },
       totalPoints: user.totalPoints,
       hasOfficialTournamentPoints: user.matchResults.some(

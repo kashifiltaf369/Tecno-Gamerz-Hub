@@ -1,5 +1,6 @@
 import { Injectable, UnauthorizedException, ConflictException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../common/services/prisma.service';
+import { GamificationService } from '../common/services/gamification.service';
 import { 
   hashPassword, 
   verifyPassword, 
@@ -19,7 +20,10 @@ import type {
 
 @Injectable()
 export class AuthService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private gamificationService: GamificationService
+  ) {}
 
   async register(input: RegisterInput): Promise<AuthResponse> {
     // Check if user already exists
@@ -72,6 +76,14 @@ export class AuthService {
         },
       },
     });
+
+    // Award initial badges for new user
+    try {
+      await this.gamificationService.awardInitialBadges(user.id);
+    } catch (error) {
+      console.warn('Failed to award initial badges to new user:', error);
+      // Don't fail the registration if badge awarding fails
+    }
 
     return {
       user: this.toPublicUser(user),

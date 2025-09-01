@@ -7,9 +7,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { createBrowserApiClient } from '@tecno-gamerz/utils';
+import { createBrowserApiClient, formatXp } from '@tecno-gamerz/utils';
 import type { PublicUser, LeaderboardEntry, GlobalLeaderboardResponse } from '@tecno-gamerz/types';
-import { Trophy, Crown, Medal, Users, Target, Star } from 'lucide-react';
+import { Trophy, Crown, Medal, Users, Target, Star, Zap } from 'lucide-react';
 
 export default function LeaderboardPage() {
   const router = useRouter();
@@ -259,7 +259,15 @@ export default function LeaderboardPage() {
                           <Crown className="w-4 h-4 text-yellow-500" title="Has Official Tournament Points" />
                         )}
                       </CardTitle>
-                      <CardDescription>@{leaderboard.entries[1].user.username}</CardDescription>
+                      <CardDescription className="flex items-center justify-center gap-2">
+                        @{leaderboard.entries[1].user.username}
+                        {leaderboard.entries[1].user.level && (
+                          <Badge variant="outline" className="text-xs">
+                            <Star className="w-3 h-3 mr-1" />
+                            Lv.{leaderboard.entries[1].user.level}
+                          </Badge>
+                        )}
+                      </CardDescription>
                     </CardHeader>
                     <CardContent className="text-center">
                       <p className="text-2xl font-bold text-gaming-electric">
@@ -286,7 +294,15 @@ export default function LeaderboardPage() {
                           <Crown className="w-5 h-5 text-yellow-500" title="Has Official Tournament Points" />
                         )}
                       </CardTitle>
-                      <CardDescription>@{leaderboard.entries[0].user.username}</CardDescription>
+                      <CardDescription className="flex items-center justify-center gap-2">
+                        @{leaderboard.entries[0].user.username}
+                        {leaderboard.entries[0].user.level && (
+                          <Badge variant="outline" className="text-xs">
+                            <Star className="w-3 h-3 mr-1" />
+                            Lv.{leaderboard.entries[0].user.level}
+                          </Badge>
+                        )}
+                      </CardDescription>
                       <Badge className="mt-2 bg-yellow-500/20 text-yellow-500">Champion</Badge>
                     </CardHeader>
                     <CardContent className="text-center">
@@ -314,7 +330,15 @@ export default function LeaderboardPage() {
                           <Crown className="w-4 h-4 text-yellow-500" title="Has Official Tournament Points" />
                         )}
                       </CardTitle>
-                      <CardDescription>@{leaderboard.entries[2].user.username}</CardDescription>
+                      <CardDescription className="flex items-center justify-center gap-2">
+                        @{leaderboard.entries[2].user.username}
+                        {leaderboard.entries[2].user.level && (
+                          <Badge variant="outline" className="text-xs">
+                            <Star className="w-3 h-3 mr-1" />
+                            Lv.{leaderboard.entries[2].user.level}
+                          </Badge>
+                        )}
+                      </CardDescription>
                     </CardHeader>
                     <CardContent className="text-center">
                       <p className="text-2xl font-bold text-amber-600">
@@ -350,8 +374,22 @@ export default function LeaderboardPage() {
                               {entry.hasOfficialTournamentPoints && (
                                 <Crown className="w-4 h-4 text-yellow-500" title="Has Official Tournament Points" />
                               )}
+                              {entry.user.level && (
+                                <Badge variant="outline" className="text-xs bg-gaming-neon/10 border-gaming-neon/30">
+                                  <Star className="w-3 h-3 mr-1" />
+                                  Lv.{entry.user.level}
+                                </Badge>
+                              )}
                             </p>
-                            <p className="text-sm text-muted-foreground">@{entry.user.username}</p>
+                            <p className="text-sm text-muted-foreground flex items-center gap-2">
+                              @{entry.user.username}
+                              {entry.user.xp && (
+                                <span className="flex items-center gap-1 text-xs">
+                                  <Zap className="w-3 h-3 text-gaming-electric" />
+                                  {formatXp(entry.user.xp)} XP
+                                </span>
+                              )}
+                            </p>
                           </div>
                         </div>
                         <div className="text-right">

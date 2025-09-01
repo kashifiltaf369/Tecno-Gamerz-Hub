@@ -4,6 +4,7 @@ export * from './database';
 export * from './api';
 export * from './tournaments';
 export * from './leaderboard';
+export * from './gamification';
 
 // Common utility types
 export type ID = string;

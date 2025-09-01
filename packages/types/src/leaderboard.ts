@@ -27,7 +27,10 @@ export interface CreateMatchResultDto {
 // Leaderboard entry interface
 export interface LeaderboardEntry {
   rank: number;
-  user: Pick<User, 'id' | 'name' | 'username' | 'image'>;
+  user: Pick<User, 'id' | 'name' | 'username' | 'image'> & {
+    level?: number;
+    xp?: number;
+  };
   totalPoints: number;
   hasOfficialTournamentPoints: boolean; // Indicates if user has points from Tecno Gamerz Official tournaments
 }

@@ -1,12 +1,16 @@
 import { Injectable, NotFoundException, BadRequestException, ConflictException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../common/services/prisma.service';
+import { GamificationService } from '../common/services/gamification.service';
 import { CreateTournamentDto, UpdateTournamentDto, TournamentFiltersDto, CreateMatchResultDto, CreateBulkMatchResultsDto } from './dto/tournament.dto';
 import { Tournament, TournamentParticipant, PaginatedResponse, RoleName, MatchResult } from '@tecno-gamerz/types';
 import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class TournamentsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly gamificationService: GamificationService
+  ) {}
 
   async create(createTournamentDto: CreateTournamentDto, userId: string): Promise<Tournament> {
     const { title, description, game, startDate, endDate } = createTournamentDto;
@@ -348,36 +352,54 @@ export class TournamentsService {
       throw new ConflictException('You are already participating in this tournament');
     }
 
-    // Create participation record
-    const participant = await this.prisma.tournamentParticipant.create({
-      data: {
-        tournamentId,
-        userId,
-      },
-      include: {
-        tournament: {
-          include: {
-            createdBy: {
-              select: {
-                id: true,
-                name: true,
-                username: true,
-                email: true,
-                role: true,
-                image: true,
+    // Get tournament details for XP award
+    const tournamentForXp = await this.prisma.tournament.findUnique({
+      where: { id: tournamentId },
+      select: { title: true, isTecnoGamerzOfficial: true },
+    });
+
+    // Create participation record and award XP in a transaction
+    const participant = await this.prisma.$transaction(async (prisma) => {
+      const newParticipant = await prisma.tournamentParticipant.create({
+        data: {
+          tournamentId,
+          userId,
+        },
+        include: {
+          tournament: {
+            include: {
+              createdBy: {
+                select: {
+                  id: true,
+                  name: true,
+                  username: true,
+                  email: true,
+                  role: true,
+                  image: true,
+                },
               },
             },
           },
-        },
-        user: {
-          select: {
-            id: true,
-            name: true,
-            username: true,
-            image: true,
+          user: {
+            select: {
+              id: true,
+              name: true,
+              username: true,
+              image: true,
+            },
           },
         },
-      },
+      });
+
+      // Award XP and badges for joining tournament
+      await this.gamificationService.awardJoinTournamentXp(
+        userId,
+        tournamentId,
+        tournamentForXp?.title || 'Tournament',
+        tournamentForXp?.isTecnoGamerzOfficial || false
+      );
+
+      return newParticipant;
     });
 
     return participant as TournamentParticipant;
@@ -483,7 +505,7 @@ export class TournamentsService {
     const officialMultiplier = tournament.isTecnoGamerzOfficial ? 1.5 : 1.0;
     const awardedPoints = Math.floor(score * baseMultiplier * officialMultiplier);
 
-    // Use transaction to create match result and update user points
+    // Use transaction to create match result, update user points, and award XP
     const result = await this.prisma.$transaction(async (prisma) => {
       // Create match result
       const matchResult = await prisma.matchResult.create({
@@ -522,6 +544,14 @@ export class TournamentsService {
           },
         },
       });
+
+      // Award XP for match participation
+      await this.gamificationService.awardMatchParticipationXp(
+        userId,
+        tournamentId,
+        tournament.title,
+        tournament.isTecnoGamerzOfficial
+      );
 
       return matchResult;
     });
@@ -579,7 +609,7 @@ export class TournamentsService {
       awardedPoints: Math.floor(result.score * baseMultiplier * officialMultiplier),
     }));
 
-    // Use transaction to create all match results and update user points
+    // Use transaction to create all match results, update user points, and award XP
     const createdResults = await this.prisma.$transaction(async (prisma) => {
       // Create all match results
       const matchResults = await Promise.all(
@@ -619,6 +649,18 @@ export class TournamentsService {
               },
             },
           })
+        )
+      );
+
+      // Award XP for match participation for all users
+      await Promise.all(
+        matchResultsData.map(data =>
+          this.gamificationService.awardMatchParticipationXp(
+            data.userId,
+            tournamentId,
+            tournament.title,
+            tournament.isTecnoGamerzOfficial
+          )
         )
       );
 

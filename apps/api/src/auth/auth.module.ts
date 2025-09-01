@@ -7,6 +7,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
 import { PrismaService } from '../common/services/prisma.service';
+import { GamificationService } from '../common/services/gamification.service';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { PrismaService } from '../common/services/prisma.service';
     JwtAuthGuard,
     RolesGuard,
     PrismaService,
+    GamificationService,
   ],
   exports: [AuthService, JwtAuthGuard, RolesGuard, PrismaService],
 })
