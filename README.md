@@ -176,6 +176,16 @@ The platform now includes fully functional gaming features! These are the workin
 - ✅ **Level Display** - User levels shown throughout the platform
 - ✅ **Badge Collection** - Track progress towards earning all badges
 
+### 🤝 Social Features (Complete)
+
+- ✅ **Friends System** - Send, accept, and manage friend requests
+- ✅ **Real-time Chat** - Private messaging between friends with WebSocket support
+- ✅ **Notifications** - Real-time notifications for friend requests, messages, and achievements
+- ✅ **Online Status** - See which friends are online and available to chat
+- ✅ **Chat History** - Persistent message storage and conversation history
+- ✅ **Friend Management** - Add friends, remove friends, and manage relationships
+- ✅ **Notification Bell** - Real-time notification dropdown in navigation bar
+
 ### Quick Test Drive
 
 1. **Start the Development Servers**:
@@ -333,6 +343,41 @@ model MatchResult {
   tournament Tournament @relation(onDelete: Cascade)
   user       User       @relation(onDelete: Cascade)
 }
+
+model Friendship {
+  id          String           @id @default(uuid())
+  requesterId String
+  receiverId  String
+  status      FriendshipStatus @default(PENDING)
+  createdAt   DateTime         @default(now())
+
+  requester User @relation("FriendshipRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+  receiver  User @relation("FriendshipReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+}
+
+model ChatMessage {
+  id         String   @id @default(uuid())
+  senderId   String
+  receiverId String
+  content    String
+  isRead     Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  sender   User @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver User @relation("MessageReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  type      NotificationType
+  message   String
+  isRead    Boolean          @default(false)
+  metadata  Json?
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
 ```
 
 ### API Integration
@@ -349,6 +394,18 @@ The frontend uses React Query for efficient data fetching and caching:
 - **GET /leaderboard/:userId** - User rank and stats
 - **GET /leaderboard/xp/top** - XP-based leaderboard
 - **GET /users/profile/:id** - Complete user profile with XP, level, and badges
+- **POST /friends/request** - Send friend request
+- **PATCH /friends/request/:friendshipId** - Accept/decline friend request
+- **GET /friends** - Get friends list
+- **GET /friends/requests** - Get pending friend requests
+- **DELETE /friends/:friendshipId** - Remove friend
+- **POST /chat/message** - Send message to friend
+- **GET /chat/messages** - Get conversation messages
+- **GET /chat/conversations** - Get all conversations
+- **PATCH /chat/messages/mark-read** - Mark messages as read
+- **GET /notifications** - Get user notifications
+- **PATCH /notifications/mark-as-read** - Mark notifications as read
+- **GET /notifications/unread-count** - Get unread notification count
 
 ### UI Features
 
@@ -415,6 +472,94 @@ The frontend uses React Query for efficient data fetching and caching:
 - **Tournament XP**: Real-time XP earning during tournament participation
 - **Badge Notifications**: Visual feedback when earning new badges
 - **Progress Tracking**: Detailed XP and level statistics
+
+## 🤝 Social Features System (Live Feature)
+
+The social features system provides comprehensive friend management, real-time messaging, and notification functionality for enhanced user interaction.
+
+### Friends System
+
+#### Core Features
+- **Friend Requests**: Send and receive friend requests with proper validation
+- **Request Management**: Accept, decline, or cancel friend requests
+- **Friends List**: View all friends with their levels and XP stats
+- **Friend Search**: Search for users by name, username, or email address
+- **Friendship Management**: Remove friends when needed
+
+#### API Endpoints
+- **POST /friends/request**: Send friend request
+- **PATCH /friends/request/:id**: Respond to friend request (accept/decline)
+- **GET /friends**: Get user's friends list with pagination
+- **GET /friends/requests**: Get incoming and outgoing friend requests
+- **DELETE /friends/:id**: Remove friendship
+- **GET /friends/check/:userId**: Check if users are friends
+
+### Real-time Chat System
+
+#### Core Features
+- **Private Messaging**: 1-to-1 chat between friends only
+- **Real-time Delivery**: WebSocket-powered instant messaging
+- **Message History**: Persistent storage of conversation history
+- **Read Receipts**: Track which messages have been read
+- **Online Status**: See which friends are currently online
+- **Typing Indicators**: Real-time typing status in conversations
+
+#### WebSocket Events
+- **send-message**: Send a new message
+- **new-message**: Receive incoming messages
+- **typing**: Send/receive typing indicators
+- **user-online/offline**: Track friend online status
+- **messages-read**: Message read confirmations
+
+### Notifications System
+
+#### Notification Types
+- **FRIEND_REQUEST**: New friend request received
+- **FRIEND_ACCEPTED**: Friend request was accepted
+- **MESSAGE_RECEIVED**: New message from friend
+- **TOURNAMENT_START**: Tournament you joined has started
+- **TOURNAMENT_WIN**: You won a tournament
+- **LEVEL_UP**: You gained a new level
+- **BADGE_EARNED**: You earned a new achievement badge
+
+#### Features
+- **Real-time Delivery**: Instant notifications via WebSocket
+- **Notification Bell**: UI indicator showing unread count
+- **Mark as Read**: Individual or bulk mark as read
+- **Notification History**: Access to past notifications
+- **Smart Routing**: Click notifications to navigate to relevant content
+
+### UI Components
+
+#### Friends Page
+- **Tabbed Interface**: Friends list, requests, and add friends
+- **Search Functionality**: Find friends in your list
+- **Request Management**: Accept/decline incoming requests
+- **Friend Cards**: Rich display with user stats and actions
+
+#### Chat Sidebar
+- **Conversation List**: All active conversations
+- **Real-time Chat**: Live messaging interface
+- **Message Composition**: Text input with send functionality
+- **Unread Indicators**: Visual cues for new messages
+
+#### Notification Bell
+- **Dropdown Menu**: Quick access to recent notifications
+- **Unread Badge**: Visual indicator of notification count
+- **Action Routing**: Direct navigation to relevant content
+- **Mark All Read**: Bulk action for notification management
+
+### Security Features
+- **Friend-only Messaging**: Users can only message their friends
+- **Request Validation**: Prevent duplicate or self friend requests
+- **Message Authorization**: Verify sender permissions
+- **Notification Privacy**: Users only see their own notifications
+
+### Performance Optimizations
+- **Pagination**: Efficient loading of friends and messages
+- **Real-time Updates**: WebSocket connections for instant updates
+- **Lazy Loading**: Load conversations and messages on demand
+- **Caching**: Optimized API responses with proper caching headers
 
 ## 🔧 Configuration
 

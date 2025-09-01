@@ -37,6 +37,14 @@ model User {
   createdTournaments Tournament[] @relation("TournamentCreator")
   tournamentParticipants TournamentParticipant[]
   matchResults MatchResult[]
+  
+  // Social features relations
+  sentFriendships       Friendship[] @relation("FriendshipRequester")
+  receivedFriendships   Friendship[] @relation("FriendshipReceiver")
+  sentMessages          ChatMessage[] @relation("MessageSender")
+  receivedMessages      ChatMessage[] @relation("MessageReceiver")
+  notifications         Notification[]
+  
   // videos Video[]
   // orders Order[]
   // donations Donation[]
@@ -370,6 +378,65 @@ model Comment {
 }
 */
 
+// Friends System
+model Friendship {
+  id          String           @id @default(uuid())
+  requesterId String
+  receiverId  String
+  status      FriendshipStatus @default(PENDING)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  requester User @relation("FriendshipRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+  receiver  User @relation("FriendshipReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@unique([requesterId, receiverId])
+  @@index([requesterId])
+  @@index([receiverId])
+  @@index([status])
+  @@map("friendships")
+}
+
+// Chat Messages for real-time messaging
+model ChatMessage {
+  id         String   @id @default(uuid())
+  senderId   String
+  receiverId String
+  content    String   @db.Text
+  isRead     Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  sender   User @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver User @relation("MessageReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@index([senderId])
+  @@index([receiverId])
+  @@index([createdAt])
+  @@index([isRead])
+  @@map("chat_messages")
+}
+
+// Notifications System
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  type      NotificationType
+  message   String
+  isRead    Boolean          @default(false)
+  metadata  Json?            // Additional data like friendshipId, messageId, etc.
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isRead])
+  @@index([type])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
 // Additional enums for tournament features
 enum TournamentStatus {
   UPCOMING
@@ -378,6 +445,27 @@ enum TournamentStatus {
   CANCELLED
 
   @@map("tournament_status")
+}
+
+// Social features enums
+enum FriendshipStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+
+  @@map("friendship_status")
+}
+
+enum NotificationType {
+  FRIEND_REQUEST
+  FRIEND_ACCEPTED
+  TOURNAMENT_START
+  TOURNAMENT_WIN
+  MESSAGE_RECEIVED
+  LEVEL_UP
+  BADGE_EARNED
+
+  @@map("notification_type")
 }
 
 // Future enums for gaming platform features
