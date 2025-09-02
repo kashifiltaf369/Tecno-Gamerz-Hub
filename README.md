@@ -899,6 +899,281 @@ curl -X POST http://localhost:3001/admin/videos/sync \
 - **Tournament Ownership**: Stream updates respect tournament ownership rules
 - **Audit Logging**: All stream updates logged for security tracking
 
+## 💳 Payment System (Live Feature)
+
+The platform now includes a comprehensive, secure payment system powered by Stripe, supporting tournament entry fees, subscriptions, and marketplace purchases.
+
+### 🚀 Payment Features
+
+#### Core Payment Infrastructure
+- **Stripe Integration**: Full Stripe Checkout integration with webhook handling
+- **Security First**: PCI compliance through Stripe, no sensitive card data storage
+- **Webhook Security**: Signature verification and idempotency handling
+- **Admin Controls**: Complete refund functionality and payment management
+
+#### Tournament Payment Flow
+- **Entry Fees**: Support for paid tournament registration with automatic validation
+- **Smart Validation**: Prevents duplicate registration and validates tournament capacity
+- **Payment Status Tracking**: Real-time payment status updates and notifications
+- **Automatic Registration**: Users automatically added to tournament after successful payment
+
+#### Subscription Management
+- **Multiple Plans**: Basic ($9.99), Pro ($19.99), Premium ($29.99) subscription tiers
+- **Feature-Rich Plans**: Different feature sets and benefits for each subscription level
+- **Subscription UI**: Beautiful subscription selection interface with plan comparisons
+- **Billing Management**: Stripe-powered subscription lifecycle management
+
+#### Shop Integration
+- **Product Payments**: Complete infrastructure for marketplace/shop functionality
+- **Flexible Metadata**: Support for any product type with custom metadata
+- **Purchase Flow**: Seamless checkout experience for digital and physical products
+
+### 💻 Payment API Endpoints
+
+```
+Payment Management:
+POST   /payments/create-checkout-session  # Create Stripe checkout session
+POST   /payments/webhook                  # Handle Stripe webhook events (secure)
+GET    /payments/:id/status               # Check payment status
+GET    /payments/my-payments              # Get user's payment history
+
+Admin Operations:
+POST   /payments/:id/refund               # Refund a payment (Admin only)
+GET    /payments/admin/all                # Get all payments with filters (Admin only)
+```
+
+### 🎮 Tournament Integration
+
+#### Enhanced Tournament Features
+- **Entry Fee Support**: Tournaments can now have entry fees with currency handling
+- **Maximum Participants**: Participant limits with payment validation
+- **Prize Pool Tracking**: Automatic prize pool calculation based on entry fees
+- **Payment Validation**: Smart validation prevents registration issues
+
+#### Tournament Payment Flow
+```tsx
+// Tournament with entry fee
+const tournament = {
+  id: 'tournament-uuid',
+  title: 'Championship Tournament',
+  entryFee: 2000, // $20.00 in cents
+  currency: 'USD',
+  maxParticipants: 100
+};
+
+// Payment button component
+<TournamentPaymentButton 
+  tournament={tournament}
+  isParticipant={false}
+/>
+```
+
+### 💎 Subscription Plans
+
+#### Plan Features
+- **Basic Plan ($9.99/month)**:
+  - Join unlimited free tournaments
+  - Basic leaderboard access
+  - Community features
+  - Basic profile customization
+
+- **Pro Plan ($19.99/month)**:
+  - Everything in Basic
+  - Priority tournament registration
+  - Advanced statistics
+  - Custom badges
+  - Early access to new features
+
+- **Premium Plan ($29.99/month)**:
+  - Everything in Pro
+  - VIP tournament access
+  - Personal gaming coach
+  - Exclusive premium tournaments
+  - Custom profile themes
+  - Priority customer support
+
+#### Subscription UI
+```tsx
+// Subscription selection component
+<SubscriptionPlans currentPlan={user.subscription?.plan} />
+```
+
+### 🔒 Security & Compliance
+
+#### Payment Security
+- **🛡️ PCI Compliance**: All card handling through Stripe Checkout
+- **🔐 Webhook Security**: Signature verification for all webhook events
+- **🚫 No Card Storage**: Zero sensitive payment data stored locally
+- **🔑 Authentication**: All payment endpoints properly authenticated
+- **⚡ Rate Limiting**: Protection against payment abuse and fraud
+- **📝 Audit Logging**: Comprehensive payment activity logging
+
+#### Data Protection
+- **Encrypted Communications**: All payment communications encrypted in transit
+- **Secure Tokens**: JWT-based authentication for payment endpoints
+- **Input Validation**: Comprehensive validation of all payment inputs
+- **Error Handling**: Secure error messages that don't leak sensitive information
+
+### 📊 Database Schema
+
+#### Payment Models
+```sql
+-- Payment transactions table
+CREATE TABLE payments (
+  id                        UUID PRIMARY KEY,
+  user_id                   UUID REFERENCES users(id),
+  amount                    MONEY NOT NULL,
+  currency                  VARCHAR(3) DEFAULT 'USD',
+  type                      payment_type NOT NULL,
+  status                    payment_status DEFAULT 'PENDING',
+  external_payment_id       VARCHAR, -- Stripe payment intent ID
+  stripe_checkout_session_id VARCHAR, -- Stripe session ID
+  metadata                  JSON,
+  refunded_amount          MONEY,
+  refunded_at              TIMESTAMP,
+  created_at               TIMESTAMP DEFAULT NOW(),
+  updated_at               TIMESTAMP DEFAULT NOW()
+);
+
+-- Subscription management table
+CREATE TABLE subscriptions (
+  id                     UUID PRIMARY KEY,
+  user_id               UUID REFERENCES users(id),
+  stripe_subscription_id VARCHAR UNIQUE,
+  stripe_customer_id    VARCHAR,
+  status                subscription_status,
+  plan                  subscription_plan,
+  current_period_start  TIMESTAMP,
+  current_period_end    TIMESTAMP,
+  cancel_at_period_end  BOOLEAN DEFAULT FALSE,
+  created_at           TIMESTAMP DEFAULT NOW()
+);
+```
+
+#### Enhanced Tournament Schema
+```sql
+-- Updated tournaments table with payment support
+ALTER TABLE tournaments ADD COLUMN entry_fee MONEY;
+ALTER TABLE tournaments ADD COLUMN currency VARCHAR(3) DEFAULT 'USD';
+ALTER TABLE tournaments ADD COLUMN max_participants INTEGER;
+ALTER TABLE tournaments ADD COLUMN prize_pool MONEY;
+
+-- Updated tournament participants with payment tracking
+ALTER TABLE tournament_participants ADD COLUMN payment_id UUID;
+ALTER TABLE tournament_participants ADD COLUMN is_paid BOOLEAN DEFAULT FALSE;
+```
+
+### 🎯 Usage Examples
+
+#### Custom Payment Button
+```tsx
+import { PaymentButton } from '@/components/payments/PaymentButton';
+
+// For product purchases
+<PaymentButton 
+  paymentData={{
+    type: 'PURCHASE',
+    amount: 1999, // $19.99 in cents
+    productId: 'product-uuid',
+    metadata: { productName: 'Gaming Headset' }
+  }}
+/>
+
+// For subscriptions  
+<PaymentButton 
+  paymentData={{
+    type: 'SUBSCRIPTION',
+    amount: 1999, // $19.99/month
+    subscriptionPlan: 'PRO'
+  }}
+/>
+```
+
+#### Payment Service Usage
+```tsx
+import { paymentService } from '@/lib/services/payment-service';
+
+// Create tournament payment
+const session = await paymentService.createTournamentPayment(
+  tournamentId,
+  2000, // $20.00 in cents
+  { tournamentName: 'Championship' }
+);
+
+// Redirect to Stripe Checkout
+await paymentService.redirectToCheckout(session.sessionId);
+
+// Check payment status
+const payment = await paymentService.getPaymentStatus(paymentId);
+```
+
+### 🔧 Environment Configuration
+
+#### Required Environment Variables
+```bash
+# Stripe Configuration (Backend)
+STRIPE_SECRET_KEY=sk_test_your-stripe-secret-key
+STRIPE_WEBHOOK_SECRET=whsec_your-webhook-secret
+
+# Stripe Configuration (Frontend)  
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_your-stripe-publishable-key
+```
+
+#### Stripe Setup Steps
+1. **Create Stripe Account**: Sign up at https://stripe.com
+2. **Get API Keys**: Copy your publishable and secret keys from the Stripe dashboard
+3. **Configure Webhooks**: Set up webhook endpoint at `your-api-domain/api/v1/payments/webhook`
+4. **Webhook Events**: Subscribe to these events:
+   - `checkout.session.completed`
+   - `invoice.paid`
+   - `payment_intent.succeeded`
+   - `customer.subscription.created`
+   - `customer.subscription.updated`
+   - `customer.subscription.deleted`
+
+### 🚦 Testing & Development
+
+#### Local Development
+```bash
+# Install Stripe CLI for webhook testing
+npm install -g stripe-cli
+
+# Login to Stripe
+stripe login
+
+# Forward webhooks to local server
+stripe listen --forward-to localhost:4000/api/v1/payments/webhook
+
+# Use test data
+stripe fixtures fixtures/test_data.json
+```
+
+#### Test Cards
+```
+# Successful payment
+4242 4242 4242 4242
+
+# Declined payment  
+4000 0000 0000 0002
+
+# Requires authentication
+4000 0025 0000 3155
+```
+
+### 📈 Analytics & Monitoring
+
+#### Payment Metrics
+- **Revenue Tracking**: Real-time revenue analytics
+- **Conversion Rates**: Payment completion rates by flow type
+- **Failed Payments**: Analysis of failed payment reasons
+- **Subscription Metrics**: MRR, churn, and growth rates
+
+#### Admin Dashboard
+- **Payment Overview**: Recent payments and trends
+- **Refund Management**: Process refunds with audit trail
+- **Subscription Management**: View and manage all subscriptions
+- **Revenue Reports**: Detailed financial reporting
+
 ## 🔧 Configuration
 
 ### Environment Variables
