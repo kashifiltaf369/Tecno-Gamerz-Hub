@@ -73,6 +73,13 @@ export function Navbar({ user, onSignOut }: NavbarProps) {
                     <Button
                       variant="ghost"
                       size="sm"
+                      onClick={() => router.push('/videos')}
+                    >
+                      Videos
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       onClick={navigateToFriends}
                     >
                       Friends

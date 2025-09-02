@@ -48,6 +48,12 @@ model User {
   // Content relations
   userContent           UserContent[] @relation("UserContent")
   
+  // Video system relations
+  videoInteractions     VideoInteraction[]
+  videoQuizAttempts     VideoQuizAttempt[]
+  videoClips            VideoClip[]
+  videoClipLikes        VideoClipLike[]
+  
   // videos Video[]
   // orders Order[]
   // donations Donation[]
@@ -456,6 +462,160 @@ model Notification {
   @@map("notifications")
 }
 
+// YouTube Channel Integration
+model Channel {
+  id         String   @id @default(uuid())
+  name       String
+  source     String   @default("youtube") // "youtube", "twitch", etc.
+  externalId String   @unique             // YouTube channel ID
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  // Relations
+  videos Video[]
+
+  @@index([source])
+  @@index([externalId])
+  @@map("channels")
+}
+
+// Video Content from YouTube/Twitch
+model Video {
+  id          String    @id @default(uuid())
+  title       String    @db.VarChar(255)
+  description String?   @db.Text
+  youtubeId   String    @unique
+  duration    Int?      // Duration in seconds
+  publishedAt DateTime?
+  thumbnails  Json?     // YouTube thumbnail URLs as JSON
+  tags        String[]  @default([])
+  transcript  String?   @db.Text
+  views       Int       @default(0) // Our platform views, not YouTube views
+  channelId   String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  channel             Channel             @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  videoInteractions   VideoInteraction[]
+  videoQuizzes        VideoQuiz[]
+  videoClips          VideoClip[]
+
+  @@index([youtubeId])
+  @@index([channelId])
+  @@index([publishedAt])
+  @@index([views])
+  @@index([tags])
+  @@map("videos")
+}
+
+// User interactions with videos
+model VideoInteraction {
+  id        String                @id @default(uuid())
+  userId    String
+  videoId   String
+  action    VideoInteractionType
+  progress  Int?                  @default(0) // Progress percentage for WATCH action
+  metadata  Json?                 // Additional data like clip timestamps
+  createdAt DateTime              @default(now())
+
+  // Relations
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  video Video @relation(fields: [videoId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, videoId, action])
+  @@index([userId])
+  @@index([videoId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("video_interactions")
+}
+
+// Video Quizzes for gamification
+model VideoQuiz {
+  id          String   @id @default(uuid())
+  videoId     String
+  title       String
+  description String?
+  questions   Json     // Array of quiz questions with options and correct answers
+  xpReward    Int      @default(50)
+  coinsReward Int      @default(10)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  video         Video               @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  quizAttempts  VideoQuizAttempt[]
+
+  @@index([videoId])
+  @@map("video_quizzes")
+}
+
+// User quiz attempts
+model VideoQuizAttempt {
+  id        String   @id @default(uuid())
+  userId    String
+  quizId    String
+  score     Int      // Percentage score
+  answers   Json     // User's answers
+  xpEarned  Int      @default(0)
+  coinsEarned Int    @default(0)
+  completedAt DateTime @default(now())
+
+  // Relations
+  user User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  quiz VideoQuiz @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, quizId])
+  @@index([userId])
+  @@index([quizId])
+  @@map("video_quiz_attempts")
+}
+
+// Video clips/highlights created by users
+model VideoClip {
+  id          String   @id @default(uuid())
+  userId      String
+  videoId     String
+  title       String
+  description String?
+  startTime   Int      // Start time in seconds
+  endTime     Int      // End time in seconds
+  isPublic    Boolean  @default(true)
+  views       Int      @default(0)
+  likes       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  video     Video       @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  clipLikes VideoClipLike[]
+
+  @@index([userId])
+  @@index([videoId])
+  @@index([isPublic])
+  @@index([createdAt])
+  @@map("video_clips")
+}
+
+// Video clip likes
+model VideoClipLike {
+  id     String @id @default(uuid())
+  userId String
+  clipId String
+  createdAt DateTime @default(now())
+
+  // Relations
+  user User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  clip VideoClip @relation(fields: [clipId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, clipId])
+  @@index([userId])
+  @@index([clipId])
+  @@map("video_clip_likes")
+}
+
 // Additional enums for tournament features
 enum TournamentStatus {
   UPCOMING
@@ -483,8 +643,22 @@ enum NotificationType {
   MESSAGE_RECEIVED
   LEVEL_UP
   BADGE_EARNED
+  VIDEO_WATCH_COMPLETE
+  VIDEO_QUIZ_COMPLETE
 
   @@map("notification_type")
+}
+
+// Video interaction types
+enum VideoInteractionType {
+  WATCH
+  LIKE
+  COMMENT
+  CLIP
+  COMPLETE
+  QUIZ_ATTEMPT
+
+  @@map("video_interaction_type")
 }
 
 // Future enums for gaming platform features
