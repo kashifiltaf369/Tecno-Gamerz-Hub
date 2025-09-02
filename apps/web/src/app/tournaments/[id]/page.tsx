@@ -22,8 +22,10 @@ import {
   UserPlus,
   UserMinus,
   MapPin,
-  Clock
+  Clock,
+  Video
 } from 'lucide-react';
+import { StreamEmbed } from '@/components/ui/stream-embed';
 
 export default function TournamentDetailPage() {
   const router = useRouter();
@@ -435,10 +437,16 @@ export default function TournamentDetailPage() {
 
           {/* Tournament Details */}
           <Tabs defaultValue="details" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className={`grid w-full ${tournament.streamUrl ? 'grid-cols-4' : 'grid-cols-3'}`}>
               <TabsTrigger value="details">Details</TabsTrigger>
               <TabsTrigger value="participants">Participants ({tournament.participantCount || 0})</TabsTrigger>
               <TabsTrigger value="schedule">Schedule</TabsTrigger>
+              {tournament.streamUrl && (
+                <TabsTrigger value="stream">
+                  <Video className="w-4 h-4 mr-2" />
+                  Live Stream
+                </TabsTrigger>
+              )}
             </TabsList>
 
             <TabsContent value="details">
@@ -659,6 +667,40 @@ export default function TournamentDetailPage() {
                 </CardContent>
               </Card>
             </TabsContent>
+
+            {tournament.streamUrl && (
+              <TabsContent value="stream">
+                <Card className="bg-card/50 backdrop-blur">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Video className="w-5 h-5" />
+                      Live Stream
+                      {tournament.isTecnoGamerzOfficial && (
+                        <Badge variant="secondary" className="bg-yellow-500/20 text-yellow-300 border-yellow-500/30">
+                          Official Stream
+                        </Badge>
+                      )}
+                    </CardTitle>
+                    <CardDescription>
+                      {status === 'ACTIVE' 
+                        ? 'Watch the tournament live!' 
+                        : status === 'UPCOMING' 
+                        ? 'Stream will be available when the tournament starts'
+                        : 'Tournament stream has ended'
+                      }
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <StreamEmbed
+                      url={tournament.streamUrl}
+                      title={tournament.title}
+                      isOfficialStream={tournament.isTecnoGamerzOfficial}
+                      className="w-full"
+                    />
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            )}
           </Tabs>
         </div>
       </div>

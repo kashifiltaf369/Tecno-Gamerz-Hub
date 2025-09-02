@@ -707,4 +707,55 @@ export class TournamentsService {
 
     return results as MatchResult[];
   }
+
+  async updateStream(tournamentId: string, streamUrl?: string | null): Promise<Tournament> {
+    // Verify tournament exists
+    const tournament = await this.prisma.tournament.findUnique({
+      where: { id: tournamentId },
+    });
+
+    if (!tournament) {
+      throw new NotFoundException('Tournament not found');
+    }
+
+    // Validate stream URL format if provided
+    if (streamUrl && streamUrl.trim() !== '') {
+      const normalizedUrl = streamUrl.trim();
+      // Basic URL validation for Twitch and YouTube
+      const validUrlPattern = /^https?:\/\/(www\.)?(twitch\.tv|youtube\.com|youtu\.be)\/.+$/i;
+      
+      if (!validUrlPattern.test(normalizedUrl)) {
+        throw new BadRequestException('Stream URL must be a valid Twitch or YouTube URL');
+      }
+    }
+
+    const updatedTournament = await this.prisma.tournament.update({
+      where: { id: tournamentId },
+      data: {
+        streamUrl: streamUrl?.trim() || null,
+      },
+      include: {
+        createdBy: {
+          select: {
+            id: true,
+            name: true,
+            username: true,
+            email: true,
+            role: true,
+            image: true,
+          },
+        },
+        _count: {
+          select: {
+            participants: true,
+          },
+        },
+      },
+    });
+
+    return {
+      ...updatedTournament,
+      participantCount: updatedTournament._count.participants,
+    } as Tournament;
+  }
 }

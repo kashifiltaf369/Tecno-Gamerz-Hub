@@ -176,9 +176,16 @@ export default function TournamentsPage() {
                 </Button>
                 <Button 
                   variant="ghost" 
-                  className="text-gaming-neon"
+                  className="text-foreground bg-gaming-neon/10"
                 >
                   Tournaments
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  onClick={() => router.push('/community')}
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  Community
                 </Button>
                 <Button 
                   variant="ghost" 

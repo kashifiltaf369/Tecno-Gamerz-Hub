@@ -84,10 +84,36 @@ export default function DashboardPage() {
       <nav className="border-b border-gaming-neon/20 bg-card/50 backdrop-blur">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
-            <div className="flex items-center">
-              <h1 className="text-xl font-bold bg-gradient-to-r from-gaming-neon to-gaming-electric bg-clip-text text-transparent">
+            <div className="flex items-center space-x-8">
+              <h1 
+                className="text-xl font-bold bg-gradient-to-r from-gaming-neon to-gaming-electric bg-clip-text text-transparent cursor-pointer"
+                onClick={() => router.push('/')}
+              >
                 Tecno Gamerz Hub
               </h1>
+              <nav className="hidden md:flex space-x-6">
+                <Button 
+                  variant="ghost" 
+                  onClick={() => router.push('/dashboard')}
+                  className="text-foreground bg-gaming-neon/10"
+                >
+                  Dashboard
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  onClick={() => router.push('/tournaments')}
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  Tournaments
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  onClick={() => router.push('/community')}
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  Community
+                </Button>
+              </nav>
             </div>
             <div className="flex items-center space-x-4">
               <span className="text-sm text-muted-foreground">
@@ -236,6 +262,13 @@ export default function DashboardPage() {
                   className="bg-gaming-electric hover:bg-gaming-electric/90"
                 >
                   View Leaderboard
+                </Button>
+                <Button 
+                  size="sm"
+                  onClick={() => router.push('/community')}
+                  className="bg-gaming-purple hover:bg-gaming-purple/90"
+                >
+                  View Community
                 </Button>
                 <Button 
                   size="sm"

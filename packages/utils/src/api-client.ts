@@ -16,7 +16,9 @@ import type {
   CreateBulkMatchResultsDto,
   GlobalLeaderboardResponse,
   UserRankStats,
-  LeaderboardFilters
+  LeaderboardFilters,
+  UserContent,
+  CreateUserContentInput
 } from '@tecno-gamerz/types';
 
 export interface ApiClientConfig {
@@ -171,6 +173,13 @@ export class ApiClient {
     return this.request<TournamentParticipant[]>('/tournaments/user/participations');
   }
 
+  async updateTournamentStream(id: string, streamUrl: string): Promise<ApiResponse<Tournament>> {
+    return this.request<Tournament>(`/tournaments/${id}/stream`, {
+      method: 'PATCH',
+      body: JSON.stringify({ streamUrl }),
+    });
+  }
+
   // Match results endpoints
   async createMatchResult(matchResultData: CreateMatchResultDto): Promise<ApiResponse<MatchResult>> {
     return this.request<MatchResult>(`/tournaments/${matchResultData.tournamentId}/results`, {
@@ -215,6 +224,24 @@ export class ApiClient {
 
   async getUserRankStats(userId: string): Promise<ApiResponse<UserRankStats>> {
     return this.request<UserRankStats>(`/leaderboard/${userId}`);
+  }
+
+  // Content endpoints
+  async getContent(): Promise<ApiResponse<UserContent[]>> {
+    return this.request<UserContent[]>('/content');
+  }
+
+  async createContent(contentData: CreateUserContentInput): Promise<ApiResponse<UserContent>> {
+    return this.request<UserContent>('/content', {
+      method: 'POST',
+      body: JSON.stringify(contentData),
+    });
+  }
+
+  async deleteContent(id: string): Promise<ApiResponse<void>> {
+    return this.request<void>(`/content/${id}`, {
+      method: 'DELETE',
+    });
   }
 }
 

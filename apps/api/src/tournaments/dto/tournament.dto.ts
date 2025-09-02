@@ -11,6 +11,7 @@ import {
   IsArray,
   ValidateNested,
   Min,
+  IsUrl,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
@@ -226,4 +227,14 @@ export class CreateBulkMatchResultsDto {
   @ValidateNested({ each: true })
   @Type(() => BulkMatchResultDto)
   results: BulkMatchResultDto[];
+}
+
+export class UpdateStreamDto {
+  @ApiProperty({ 
+    example: 'https://www.twitch.tv/tecnogamerz', 
+    description: 'Twitch or YouTube stream URL' 
+  })
+  @IsString()
+  @IsOptional()
+  streamUrl?: string | null;
 }

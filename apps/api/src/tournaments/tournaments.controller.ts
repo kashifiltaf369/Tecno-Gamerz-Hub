@@ -21,7 +21,7 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 import { TournamentsService } from './tournaments.service';
-import { CreateTournamentDto, UpdateTournamentDto, TournamentFiltersDto, CreateMatchResultDto, CreateBulkMatchResultsDto } from './dto/tournament.dto';
+import { CreateTournamentDto, UpdateTournamentDto, TournamentFiltersDto, CreateMatchResultDto, CreateBulkMatchResultsDto, UpdateStreamDto } from './dto/tournament.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -321,5 +321,39 @@ export class TournamentsController {
   })
   async getTournamentResults(@Param('id') tournamentId: string): Promise<MatchResult[]> {
     return this.tournamentsService.getTournamentResults(tournamentId);
+  }
+
+  @Patch(':id/stream')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(RoleName.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update tournament stream URL (Admin only)' })
+  @ApiParam({ name: 'id', description: 'Tournament ID' })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Stream URL updated successfully',
+    type: Object 
+  })
+  @ApiResponse({ 
+    status: 400, 
+    description: 'Bad request - Invalid stream URL' 
+  })
+  @ApiResponse({ 
+    status: 401, 
+    description: 'Unauthorized - JWT token required' 
+  })
+  @ApiResponse({ 
+    status: 403, 
+    description: 'Forbidden - Admin access required' 
+  })
+  @ApiResponse({ 
+    status: 404, 
+    description: 'Tournament not found' 
+  })
+  async updateStream(
+    @Param('id') tournamentId: string,
+    @Body() updateStreamDto: UpdateStreamDto,
+  ): Promise<Tournament> {
+    return this.tournamentsService.updateStream(tournamentId, updateStreamDto.streamUrl);
   }
 }

@@ -45,6 +45,9 @@ model User {
   receivedMessages      ChatMessage[] @relation("MessageReceiver")
   notifications         Notification[]
   
+  // Content relations
+  userContent           UserContent[] @relation("UserContent")
+  
   // videos Video[]
   // orders Order[]
   // donations Donation[]
@@ -193,6 +196,7 @@ model Tournament {
   title                 String
   description           String
   game                  String
+  streamUrl             String?  // Twitch/YouTube stream URL
   startDate             DateTime
   endDate               DateTime
   createdById           String
@@ -236,6 +240,21 @@ model MatchResult {
   @@index([tournamentId])
   @@index([createdAt])
   @@map("match_results")
+}
+
+// User Content for sharing highlights and clips
+model UserContent {
+  id        String   @id @default(uuid())
+  userId    String
+  title     String
+  videoUrl  String
+  createdAt DateTime @default(now())
+
+  user User @relation("UserContent", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("user_content")
 }
 
 // Future models for gaming platform features

@@ -13,6 +13,7 @@ import { LeaderboardModule } from './leaderboard/leaderboard.module';
 import { FriendsModule } from './friends/friends.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { ChatModule } from './chat/chat.module';
+import { ContentModule } from './content/content.module';
 import { configuration } from './config/configuration';
 import { validationSchema } from './config/validation';
 import { IS_PRODUCTION } from '@tecno-gamerz/utils/constants';
@@ -108,6 +109,7 @@ import { IS_PRODUCTION } from '@tecno-gamerz/utils/constants';
     FriendsModule,
     NotificationsModule,
     ChatModule,
+    ContentModule,
   ],
   controllers: [],
   providers: [],

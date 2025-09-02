@@ -15,6 +15,7 @@ export interface Tournament {
   title: string;
   description: string;
   game: string;
+  streamUrl?: string | null; // Twitch/YouTube stream URL
   startDate: Timestamp;
   endDate: Timestamp;
   createdById: ID;
