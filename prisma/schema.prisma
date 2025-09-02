@@ -54,6 +54,10 @@ model User {
   videoClips            VideoClip[]
   videoClipLikes        VideoClipLike[]
   
+  // Payment system relations
+  payments              Payment[]
+  subscriptions         Subscription[]
+  
   // videos Video[]
   // orders Order[]
   // donations Donation[]
@@ -203,6 +207,10 @@ model Tournament {
   description           String
   game                  String
   streamUrl             String?  // Twitch/YouTube stream URL
+  entryFee              Decimal? @db.Money // Entry fee for paid tournaments
+  currency              String   @default("USD") @db.VarChar(3)
+  maxParticipants       Int?     // Maximum number of participants
+  prizePool             Decimal? @db.Money // Total prize pool
   startDate             DateTime
   endDate               DateTime
   createdById           String
@@ -221,12 +229,15 @@ model TournamentParticipant {
   id           String   @id @default(uuid())
   tournamentId String
   userId       String
+  paymentId    String?  // Reference to payment for paid tournaments
+  isPaid       Boolean  @default(false) // Whether participant has paid entry fee
   joinedAt     DateTime @default(now())
 
   tournament Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
   user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([tournamentId, userId])
+  @@index([paymentId])
   @@map("tournament_participants")
 }
 
@@ -659,6 +670,100 @@ enum VideoInteractionType {
   QUIZ_ATTEMPT
 
   @@map("video_interaction_type")
+}
+
+// Payment System Models
+
+// Payment model for tracking all payment transactions
+model Payment {
+  id                String        @id @default(uuid())
+  userId            String
+  amount            Decimal       @db.Money
+  currency          String        @default("USD") @db.VarChar(3)
+  type              PaymentType
+  status            PaymentStatus @default(PENDING)
+  externalPaymentId String?       // Stripe payment intent/charge ID
+  metadata          Json?         // Additional payment data (tournament id, product info, etc.)
+  stripeCheckoutSessionId String? // Stripe checkout session ID
+  refundedAmount    Decimal?      @db.Money
+  refundedAt        DateTime?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@index([type])
+  @@index([externalPaymentId])
+  @@index([createdAt])
+  @@map("payments")
+}
+
+// Subscription model for managing user subscriptions
+model Subscription {
+  id                   String             @id @default(uuid())
+  userId               String
+  stripeSubscriptionId String             @unique
+  stripeCustomerId     String
+  status               SubscriptionStatus
+  plan                 SubscriptionPlan
+  currentPeriodStart   DateTime
+  currentPeriodEnd     DateTime
+  cancelAtPeriodEnd    Boolean            @default(false)
+  canceledAt           DateTime?
+  startedAt            DateTime           @default(now())
+  endedAt              DateTime?
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@index([stripeSubscriptionId])
+  @@index([stripeCustomerId])
+  @@map("subscriptions")
+}
+
+// Payment enums
+enum PaymentType {
+  TOURNAMENT_FEE
+  PURCHASE
+  SUBSCRIPTION
+  AD
+
+  @@map("payment_type")
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  CANCELED
+  REFUNDED
+
+  @@map("payment_status")
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  INCOMPLETE
+  INCOMPLETE_EXPIRED
+  TRIALING
+  UNPAID
+
+  @@map("subscription_status")
+}
+
+enum SubscriptionPlan {
+  BASIC
+  PRO
+  PREMIUM
+
+  @@map("subscription_plan")
 }
 
 // Future enums for gaming platform features

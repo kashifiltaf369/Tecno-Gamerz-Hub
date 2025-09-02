@@ -15,6 +15,7 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { ChatModule } from './chat/chat.module';
 import { ContentModule } from './content/content.module';
 import { VideosModule } from './videos/videos.module';
+import { PaymentsModule } from './payments/payments.module';
 import { configuration } from './config/configuration';
 import { validationSchema } from './config/validation';
 import { IS_PRODUCTION } from '@tecno-gamerz/utils/constants';
@@ -112,6 +113,7 @@ import { IS_PRODUCTION } from '@tecno-gamerz/utils/constants';
     ChatModule,
     ContentModule,
     VideosModule,
+    PaymentsModule,
   ],
   controllers: [],
   providers: [],
