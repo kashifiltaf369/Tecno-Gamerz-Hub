@@ -452,6 +452,177 @@ async function seedVideoQuizzes() {
   console.log(`✅ Created ${createdCount} sample quizzes`);
 }
 
+async function seedProducts() {
+  console.log('🛍️ Seeding sample products...');
+
+  // Sample products as requested
+  const sampleProducts = [
+    {
+      title: 'Rookie Badge',
+      description: 'Exclusive badge for new players who complete their first tournament',
+      price: 50, // $0.50
+      currency: 'USD',
+      stock: null, // Digital item - unlimited
+      images: [
+        'https://via.placeholder.com/300x300/4ade80/ffffff?text=Rookie+Badge'
+      ],
+      type: 'BADGE',
+      metadata: {
+        badgeId: 'rookie',
+        rarity: 'common',
+        category: 'achievement'
+      },
+      isActive: true,
+    },
+    {
+      title: 'Neon Profile Skin',
+      description: 'Electrify your profile with this stunning neon-themed skin',
+      price: 300, // $3.00
+      currency: 'USD',
+      stock: null, // Digital item - unlimited
+      images: [
+        'https://via.placeholder.com/300x300/8b5cf6/ffffff?text=Neon+Skin'
+      ],
+      type: 'COSMETIC',
+      metadata: {
+        css: 'skin-neon',
+        colors: ['#8b5cf6', '#06d6a0', '#ffd60a'],
+        category: 'profile-theme'
+      },
+      isActive: true,
+    },
+    {
+      title: 'Champion Badge',
+      description: 'Elite badge awarded to tournament champions',
+      price: 1000, // $10.00
+      currency: 'USD',
+      stock: null, // Digital item - unlimited
+      images: [
+        'https://via.placeholder.com/300x300/f59e0b/ffffff?text=Champion+Badge'
+      ],
+      type: 'BADGE',
+      metadata: {
+        badgeId: 'champion',
+        rarity: 'legendary',
+        category: 'achievement'
+      },
+      isActive: true,
+    },
+    {
+      title: 'Gaming Headset Pro',
+      description: 'Premium gaming headset with 7.1 surround sound and noise cancellation',
+      price: 12999, // $129.99
+      currency: 'USD',
+      stock: 50, // Physical item - limited stock
+      images: [
+        'https://via.placeholder.com/300x300/1f2937/ffffff?text=Gaming+Headset',
+        'https://via.placeholder.com/300x300/374151/ffffff?text=Headset+Side'
+      ],
+      type: 'PHYSICAL',
+      metadata: {
+        brand: 'TecnoGamerz',
+        features: ['7.1 surround sound', 'noise cancellation', 'RGB lighting'],
+        warranty: '2 years',
+        weight: '350g'
+      },
+      isActive: true,
+    },
+    {
+      title: 'VIP Tournament Access',
+      description: 'Exclusive access to VIP tournaments with higher prize pools',
+      price: 2500, // $25.00
+      currency: 'USD',
+      stock: null, // Digital item - unlimited
+      images: [
+        'https://via.placeholder.com/300x300/dc2626/ffffff?text=VIP+Access'
+      ],
+      type: 'DISCOUNT',
+      metadata: {
+        discountType: 'tournament_access',
+        accessLevel: 'vip',
+        duration: '30 days',
+        tournamentTypes: ['premium', 'exclusive']
+      },
+      isActive: true,
+    },
+    {
+      title: 'Cyber Warrior Skin',
+      description: 'Transform your profile with this futuristic cyber warrior theme',
+      price: 500, // $5.00
+      currency: 'USD',
+      stock: null, // Digital item - unlimited
+      images: [
+        'https://via.placeholder.com/300x300/06b6d4/ffffff?text=Cyber+Warrior'
+      ],
+      type: 'COSMETIC',
+      metadata: {
+        css: 'skin-cyber-warrior',
+        theme: 'futuristic',
+        colors: ['#06b6d4', '#1e293b', '#f43f5e'],
+        animations: ['matrix-rain', 'glow-effect']
+      },
+      isActive: true,
+    },
+    {
+      title: 'Gaming Mouse Pad',
+      description: 'Large gaming mouse pad with TecnoGamerz logo and RGB lighting',
+      price: 3999, // $39.99
+      currency: 'USD',
+      stock: 100, // Physical item - limited stock
+      images: [
+        'https://via.placeholder.com/300x300/059669/ffffff?text=Mouse+Pad'
+      ],
+      type: 'PHYSICAL',
+      metadata: {
+        brand: 'TecnoGamerz',
+        size: '80cm x 30cm',
+        features: ['RGB lighting', 'waterproof', 'anti-slip base'],
+        material: 'microfiber'
+      },
+      isActive: true,
+    },
+    {
+      title: '50% Tournament Entry Discount',
+      description: 'Get 50% off your next 5 tournament entries',
+      price: 750, // $7.50
+      currency: 'USD',
+      stock: null, // Digital item - unlimited
+      images: [
+        'https://via.placeholder.com/300x300/f97316/ffffff?text=50%25+OFF'
+      ],
+      type: 'DISCOUNT',
+      metadata: {
+        discountType: 'percentage',
+        discountAmount: 50,
+        maxUsage: 5,
+        validFor: 'tournament_entry',
+        expiryDays: 30
+      },
+      isActive: true,
+    }
+  ];
+
+  let createdCount = 0;
+  for (const productData of sampleProducts) {
+    const existingProduct = await prisma.product.findFirst({
+      where: { title: productData.title },
+    });
+
+    if (!existingProduct) {
+      await prisma.product.create({
+        data: {
+          ...productData,
+          images: JSON.stringify(productData.images),
+          metadata: JSON.stringify(productData.metadata),
+        },
+      });
+      createdCount++;
+    }
+  }
+
+  console.log(`✅ Created ${createdCount} sample products`);
+}
+
 async function main() {
   try {
     console.log('🌱 Starting database seed...');
@@ -460,6 +631,7 @@ async function main() {
     await seedAdminUser();
     await seedTecnoGamerzChannel();
     await seedVideoQuizzes();
+    await seedProducts();
 
     console.log('✅ Database seed completed successfully!');
   } catch (error) {

@@ -70,6 +70,7 @@ export class PaymentsService {
           type: dto.type,
           ...(dto.tournamentId && { tournamentId: dto.tournamentId }),
           ...(dto.productId && { productId: dto.productId }),
+          ...(dto.orderId && { orderId: dto.orderId }),
         },
         customer_email: undefined, // Will be fetched from user
       });
@@ -263,6 +264,8 @@ export class PaymentsService {
         return 'Tournament Entry Fee';
       case PaymentType.PURCHASE:
         return 'Product Purchase';
+      case PaymentType.SHOP_PURCHASE:
+        return 'Shop Purchase';
       case PaymentType.SUBSCRIPTION:
         return `Subscription - ${dto.subscriptionPlan || 'Premium'}`;
       case PaymentType.AD:
@@ -294,6 +297,14 @@ export class PaymentsService {
         session.metadata.userId,
         session.metadata.tournamentId,
         paymentId,
+      );
+    }
+
+    // Handle shop purchase if it's a shop purchase
+    if (session.metadata?.type === PaymentType.SHOP_PURCHASE && session.metadata?.orderId) {
+      await this.handleShopPurchaseSuccess(
+        session.metadata.orderId,
+        session.payment_intent as string,
       );
     }
 
@@ -333,6 +344,32 @@ export class PaymentsService {
       this.logger.log(`Added paid participant ${userId} to tournament ${tournamentId}`);
     } catch (error) {
       this.logger.error(`Failed to add tournament participant: ${error.message}`, error.stack);
+    }
+  }
+
+  private async handleShopPurchaseSuccess(
+    orderId: string,
+    externalPaymentId: string,
+  ): Promise<void> {
+    try {
+      // Update order status to PAID and handle fulfillment
+      // Note: We'll call the OrdersService method via event/injection later
+      // For now, we'll just update the order status
+      await this.prisma.order.update({
+        where: { id: orderId },
+        data: {
+          status: 'PAID',
+          externalPaymentId,
+        },
+      });
+
+      this.logger.log(`Shop order ${orderId} marked as paid`);
+
+      // TODO: Trigger fulfillment process
+      // This should call OrdersService.markAsPaid but we'll handle this
+      // via events or dependency injection to avoid circular dependencies
+    } catch (error) {
+      this.logger.error(`Failed to handle shop purchase success: ${error.message}`, error.stack);
     }
   }
 

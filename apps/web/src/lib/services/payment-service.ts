@@ -1,9 +1,10 @@
 interface CreateCheckoutSessionData {
-  type: 'TOURNAMENT_FEE' | 'PURCHASE' | 'SUBSCRIPTION' | 'AD';
+  type: 'TOURNAMENT_FEE' | 'PURCHASE' | 'SUBSCRIPTION' | 'AD' | 'SHOP_PURCHASE';
   amount: number;
   currency?: string;
   tournamentId?: string;
   productId?: string;
+  orderId?: string;
   subscriptionPlan?: string;
   metadata?: Record<string, any>;
   successUrl?: string;

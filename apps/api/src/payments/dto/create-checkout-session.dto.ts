@@ -6,6 +6,7 @@ export enum PaymentType {
   PURCHASE = 'PURCHASE',
   SUBSCRIPTION = 'SUBSCRIPTION',
   AD = 'AD',
+  SHOP_PURCHASE = 'SHOP_PURCHASE',
 }
 
 export class CreateCheckoutSessionDto {
@@ -51,6 +52,15 @@ export class CreateCheckoutSessionDto {
   @IsOptional()
   @IsUUID()
   productId?: string;
+
+  @ApiProperty({
+    description: 'Order ID for shop purchases',
+    example: 'order-uuid',
+    required: false,
+  })
+  @IsOptional()
+  @IsUUID()
+  orderId?: string;
 
   @ApiProperty({
     description: 'Subscription plan for subscriptions',

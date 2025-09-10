@@ -58,8 +58,11 @@ model User {
   payments              Payment[]
   subscriptions         Subscription[]
   
+  // Merchant store relations
+  orders                Order[]     @relation("UserOrders")
+  purchases             Purchase[]  @relation("UserPurchases")
+  
   // videos Video[]
-  // orders Order[]
   // donations Donation[]
   // comments Comment[]
 
@@ -274,77 +277,94 @@ model UserContent {
   @@map("user_content")
 }
 
-// Future models for gaming platform features
-// These are commented out but show the intended structure
+// Merchant Store System Models
 
-/*
-// Video/Content system
-model Video {
-  id          String   @id @default(cuid())
+// Product model for digital and physical items
+model Product {
+  id          String      @id @default(uuid())
   title       String
   description String?
-  url         String
-  thumbnail   String?
-  duration    Int?     // in seconds
-  views       Int      @default(0)
-  likes       Int      @default(0)
-  status      VideoStatus @default(PUBLISHED)
-  createdBy   String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  price       Int         // Price in cents (like Stripe)
+  currency    String      @default("USD") @db.VarChar(3)
+  stock       Int?        // null = digital/unlimited inventory
+  images      Json?       // Array of image URLs
+  type        ProductType
+  metadata    Json?       // Additional product data (badgeId, css, etc.)
+  isActive    Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
 
-  creator  User @relation(fields: [createdBy], references: [id])
-  comments Comment[]
+  // Relations
+  orderItems  OrderItem[]
+  purchases   Purchase[]  @relation("ProductPurchases")
 
-  @@map("videos")
-}
-
-// Commerce system
-model Product {
-  id          String   @id @default(cuid())
-  name        String
-  description String?
-  price       Decimal
-  images      String[]
-  inventory   Int      @default(0)
-  status      ProductStatus @default(ACTIVE)
-  createdBy   String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  creator    User        @relation(fields: [createdBy], references: [id])
-  orderItems OrderItem[]
-
+  @@index([type])
+  @@index([isActive])
+  @@index([createdAt])
   @@map("products")
 }
 
+// Order model for tracking purchases
 model Order {
-  id          String   @id @default(cuid())
-  userId      String
-  total       Decimal
-  status      OrderStatus @default(PENDING)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id                String      @id @default(uuid())
+  userId            String?     // nullable for guest orders
+  totalAmount       Int         // Total amount in cents
+  currency          String      @default("USD") @db.VarChar(3)
+  status            OrderStatus @default(PENDING)
+  externalPaymentId String?     // Stripe payment intent ID
+  metadata          Json?       // Additional order data
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
 
-  user  User        @relation(fields: [userId], references: [id])
+  // Relations
+  user  User?       @relation("UserOrders", fields: [userId], references: [id], onDelete: SetNull)
   items OrderItem[]
 
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([externalPaymentId])
   @@map("orders")
 }
 
+// Order items for individual products in an order
 model OrderItem {
-  id        String  @id @default(cuid())
-  orderId   String
-  productId String
-  quantity  Int
-  price     Decimal
+  id              String @id @default(uuid())
+  orderId         String
+  productId       String
+  priceAtPurchase Int    // Price when purchased (historical)
+  quantity        Int
+  metadata        Json?  // Item-specific metadata
 
+  // Relations
   order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product Product @relation(fields: [productId], references: [id])
 
+  @@index([orderId])
+  @@index([productId])
   @@map("order_items")
 }
 
+// Purchase model for tracking digital goods ownership
+model Purchase {
+  id        String   @id @default(uuid())
+  userId    String
+  productId String
+  orderId   String?  // Reference to the order that created this purchase
+  grantedAt DateTime @default(now())
+  metadata  Json?    // Purchase-specific data
+
+  // Relations
+  user    User    @relation("UserPurchases", fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation("ProductPurchases", fields: [productId], references: [id])
+
+  @@unique([userId, productId])
+  @@index([userId])
+  @@index([productId])
+  @@map("purchases")
+}
+
+/* Future models - commented out until enums are implemented
 // Donation system
 model Donation {
   id        String   @id @default(cuid())
@@ -732,6 +752,7 @@ enum PaymentType {
   PURCHASE
   SUBSCRIPTION
   AD
+  SHOP_PURCHASE    // New: merchant store purchases
 
   @@map("payment_type")
 }
@@ -766,6 +787,26 @@ enum SubscriptionPlan {
   @@map("subscription_plan")
 }
 
+// Merchant Store Enums
+enum ProductType {
+  COSMETIC      // Skins, themes, etc.
+  BADGE         // Achievement badges
+  DISCOUNT      // Discount coupons
+  PHYSICAL      // Physical merchandise
+
+  @@map("product_type")
+}
+
+enum OrderStatus {
+  PENDING       // Order created, payment pending
+  PAID          // Payment successful
+  FULFILLED     // Digital items granted / physical items shipped
+  CANCELLED     // Order cancelled
+  REFUNDED      // Order refunded
+
+  @@map("order_status")
+}
+
 // Future enums for gaming platform features
 /*
 enum VideoStatus {
@@ -773,21 +814,6 @@ enum VideoStatus {
   PUBLISHED
   UNLISTED
   PRIVATE
-}
-
-enum ProductStatus {
-  ACTIVE
-  INACTIVE
-  OUT_OF_STOCK
-}
-
-enum OrderStatus {
-  PENDING
-  PAID
-  SHIPPED
-  DELIVERED
-  CANCELLED
-  REFUNDED
 }
 
 enum DonationStatus {
