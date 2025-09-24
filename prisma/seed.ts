@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { hashPassword } from '../packages/utils/src/crypto';
+import { seedProducts } from './seeds/products';
 
 const prisma = new PrismaClient();
 
@@ -166,9 +167,14 @@ async function seedAdminUser() {
   }
 
   // Create new admin user
+  const hashedPassword = await hashPassword('AdminPassword123!');
+  
   const adminUser = await prisma.user.create({
     data: {
+      name: 'Admin User',
       email: adminEmail,
+      passwordHash: hashedPassword,
+      role: 'ADMIN',
       username: 'admin',
       status: 'ACTIVE',
     },
@@ -244,12 +250,223 @@ function getRoleDescription(roleName: string): string {
   return descriptions[roleName] || `Role: ${roleName}`;
 }
 
+async function seedTecnoGamerzChannel() {
+  console.log('📺 Seeding TecnoGamerz channel and sample videos...');
+
+  // Create TecnoGamerz channel
+  const channel = await prisma.channel.upsert({
+    where: { externalId: 'UCnuGhurhojQ8w6ksRZGcGOg' }, // Sample TecnoGamerz channel ID
+    update: {},
+    create: {
+      name: 'Techno Gamerz',
+      source: 'youtube',
+      externalId: 'UCnuGhurhojQ8w6ksRZGcGOg',
+    },
+  });
+
+  console.log(`✅ Created/updated channel: ${channel.name}`);
+
+  // Sample videos data (in real scenario, these would be fetched from YouTube API)
+  const sampleVideos = [
+    {
+      title: 'GTA 5 - Epic Gaming Session with New Mods!',
+      description: 'Join me in this amazing GTA 5 gameplay with the latest mods. Non-stop action and fun!',
+      youtubeId: 'dQw4w9WgXcQ', // Sample video ID
+      duration: 1245, // 20 minutes 45 seconds
+      publishedAt: new Date('2024-01-15'),
+      tags: ['GTA V', 'Gaming', 'Mods', 'Action'],
+      thumbnails: {
+        medium: {
+          url: 'https://img.youtube.com/vi/dQw4w9WgXcQ/mqdefault.jpg',
+          width: 320,
+          height: 180
+        }
+      },
+      transcript: 'Welcome to another epic gaming session! Today we are exploring the amazing world of GTA 5 with some incredible new mods. Let\'s dive right into the action and see what adventures await us in Los Santos!'
+    },
+    {
+      title: 'PUBG Mobile - Victory Royale with Squad!',
+      description: 'Incredible PUBG Mobile gameplay where we achieve victory with amazing teamwork and strategy.',
+      youtubeId: 'dQw4w9WgXcR', // Sample video ID
+      duration: 891, // 14 minutes 51 seconds
+      publishedAt: new Date('2024-01-20'),
+      tags: ['PUBG Mobile', 'Battle Royale', 'Squad', 'Victory'],
+      thumbnails: {
+        medium: {
+          url: 'https://img.youtube.com/vi/dQw4w9WgXcR/mqdefault.jpg',
+          width: 320,
+          height: 180
+        }
+      },
+      transcript: 'Hey gamers! Today we\'re dropping into the battleground with my squad for some intense PUBG Mobile action. Watch as we strategize, fight, and work together to achieve that sweet victory royale!'
+    },
+    {
+      title: 'Minecraft - Building the Ultimate Gaming Setup!',
+      description: 'Creating an amazing gaming setup in Minecraft with redstone contraptions and epic designs.',
+      youtubeId: 'dQw4w9WgXcS', // Sample video ID
+      duration: 1567, // 26 minutes 7 seconds
+      publishedAt: new Date('2024-01-25'),
+      tags: ['Minecraft', 'Building', 'Redstone', 'Tutorial'],
+      thumbnails: {
+        medium: {
+          url: 'https://img.youtube.com/vi/dQw4w9WgXcS/mqdefault.jpg',
+          width: 320,
+          height: 180
+        }
+      },
+      transcript: 'Welcome back to Minecraft! In this episode, we\'re building the ultimate gaming setup with some crazy redstone contraptions. I\'ll show you step by step how to create these amazing builds!'
+    },
+    {
+      title: 'Free Fire - Pro Tips and Tricks for Beginners',
+      description: 'Learn the best strategies and tips to dominate in Free Fire. Perfect guide for new players!',
+      youtubeId: 'dQw4w9WgXcT', // Sample video ID
+      duration: 723, // 12 minutes 3 seconds
+      publishedAt: new Date('2024-02-01'),
+      tags: ['Free Fire', 'Tips', 'Tutorial', 'Beginner Guide'],
+      thumbnails: {
+        medium: {
+          url: 'https://img.youtube.com/vi/dQw4w9WgXcT/mqdefault.jpg',
+          width: 320,
+          height: 180
+        }
+      },
+      transcript: 'What\'s up Free Fire players! Today I\'m sharing some pro tips and tricks that will help beginners dominate the battlefield. These strategies have helped me win countless matches!'
+    },
+    {
+      title: 'Among Us - Hilarious Moments with Friends!',
+      description: 'The funniest Among Us gameplay with my friends. You won\'t believe these epic impostor plays!',
+      youtubeId: 'dQw4w9WgXcU', // Sample video ID
+      duration: 934, // 15 minutes 34 seconds
+      publishedAt: new Date('2024-02-05'),
+      tags: ['Among Us', 'Funny Moments', 'Friends', 'Multiplayer'],
+      thumbnails: {
+        medium: {
+          url: 'https://img.youtube.com/vi/dQw4w9WgXcU/mqdefault.jpg',
+          width: 320,
+          height: 180
+        }
+      },
+      transcript: 'Get ready to laugh! This Among Us session with my friends was absolutely hilarious. From epic impostor plays to sus moments, this video has it all!'
+    }
+  ];
+
+  // Create sample videos
+  let createdCount = 0;
+  for (const videoData of sampleVideos) {
+    const existingVideo = await prisma.video.findUnique({
+      where: { youtubeId: videoData.youtubeId },
+    });
+
+    if (!existingVideo) {
+      await prisma.video.create({
+        data: {
+          ...videoData,
+          channelId: channel.id,
+          views: Math.floor(Math.random() * 100000) + 1000, // Random view count between 1k-100k
+        },
+      });
+      createdCount++;
+    }
+  }
+
+  console.log(`✅ Created ${createdCount} sample videos`);
+}
+
+async function seedVideoQuizzes() {
+  console.log('🎯 Seeding sample video quizzes...');
+
+  // Find some videos to attach quizzes to
+  const videos = await prisma.video.findMany({
+    take: 2,
+  });
+
+  if (videos.length === 0) {
+    console.log('⚠️  No videos found, skipping quiz seeding');
+    return;
+  }
+
+  const sampleQuizzes = [
+    {
+      videoId: videos[0].id,
+      title: 'Gaming Knowledge Quiz',
+      description: 'Test your gaming knowledge with this fun quiz!',
+      questions: [
+        {
+          question: 'What is the maximum number of players in a PUBG Mobile classic match?',
+          options: ['50', '80', '100', '120'],
+          correctAnswer: 2,
+          explanation: 'PUBG Mobile classic matches support up to 100 players.'
+        },
+        {
+          question: 'Which game is known for its "Victory Royale"?',
+          options: ['PUBG', 'Fortnite', 'Call of Duty', 'Apex Legends'],
+          correctAnswer: 1,
+          explanation: 'Fortnite is famous for its "Victory Royale" when you win a match.'
+        }
+      ],
+      xpReward: 75,
+      coinsReward: 15,
+    }
+  ];
+
+  if (videos.length > 1) {
+    sampleQuizzes.push({
+      videoId: videos[1].id,
+      title: 'Minecraft Basics Quiz',
+      description: 'How well do you know Minecraft? Take this quiz to find out!',
+      questions: [
+        {
+          question: 'What material do you need to craft a diamond sword?',
+          options: ['Iron ingots', 'Gold ingots', 'Diamonds', 'Emeralds'],
+          correctAnswer: 2,
+          explanation: 'You need diamonds and sticks to craft a diamond sword.'
+        },
+        {
+          question: 'What happens when you sleep in the Nether?',
+          options: ['Nothing special', 'You wake up in the overworld', 'The bed explodes', 'You get teleported'],
+          correctAnswer: 2,
+          explanation: 'Beds explode when you try to sleep in the Nether!'
+        }
+      ],
+      xpReward: 50,
+      coinsReward: 10,
+    });
+  }
+
+  let createdCount = 0;
+  for (const quizData of sampleQuizzes) {
+    const existingQuiz = await prisma.videoQuiz.findFirst({
+      where: { 
+        videoId: quizData.videoId,
+        title: quizData.title,
+      },
+    });
+
+    if (!existingQuiz) {
+      await prisma.videoQuiz.create({
+        data: quizData,
+      });
+      createdCount++;
+    }
+  }
+
+  console.log(`✅ Created ${createdCount} sample quizzes`);
+}
+
+// Seed products using the new comprehensive seeding function
+async function seedMerchantProducts() {
+  await seedProducts();
+}
+
 async function main() {
   try {
     console.log('🌱 Starting database seed...');
 
     await seedRolesAndPermissions();
     await seedAdminUser();
+    await seedTecnoGamerzChannel();
+    await seedVideoQuizzes();
+    await seedMerchantProducts();
 
     console.log('✅ Database seed completed successfully!');
   } catch (error) {

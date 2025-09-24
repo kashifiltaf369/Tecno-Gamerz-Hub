@@ -56,10 +56,26 @@ export type Permission = typeof PERMISSIONS[keyof typeof PERMISSIONS];
 // User types
 export interface User {
   id: ID;
+  name: string;
   email: string;
+  passwordHash?: string; // Only include in internal operations
+  role: Role;
   username?: string;
   image?: string;
-  status: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';
+  status: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'DELETED';
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
+
+// Public user type (without sensitive fields)
+export interface PublicUser {
+  id: ID;
+  name: string;
+  email: string;
+  role: Role;
+  username?: string;
+  image?: string;
+  status: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'DELETED';
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }
@@ -110,6 +126,19 @@ export interface JWTPayload {
   iss: string;
 }
 
+// Auth response types
+export interface AuthResponse {
+  user: PublicUser;
+  accessToken: string;
+  refreshToken: string;
+  expiresAt: number; // Unix timestamp
+}
+
+export interface RefreshTokenResponse {
+  accessToken: string;
+  expiresAt: number;
+}
+
 // Validation schemas
 export const LoginSchema = z.object({
   email: z.string().email(),
@@ -117,12 +146,14 @@ export const LoginSchema = z.object({
 });
 
 export const RegisterSchema = z.object({
+  name: z.string().min(2).max(100),
   email: z.string().email(),
-  username: z.string().min(3).max(30).regex(/^[a-zA-Z0-9_]+$/),
+  username: z.string().min(3).max(30).regex(/^[a-zA-Z0-9_]+$/).optional(),
   password: z.string().min(8).regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/),
 });
 
 export const UpdateProfileSchema = z.object({
+  name: z.string().min(2).max(100).optional(),
   username: z.string().min(3).max(30).regex(/^[a-zA-Z0-9_]+$/).optional(),
   image: z.string().url().optional(),
 });

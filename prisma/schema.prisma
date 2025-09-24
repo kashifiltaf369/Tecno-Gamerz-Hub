@@ -12,13 +12,20 @@ datasource db {
 
 // User model - core user information
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  username  String?  @unique
-  image     String?
-  status    UserStatus @default(ACTIVE)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String     @id @default(uuid())
+  name         String
+  email        String     @unique
+  passwordHash String
+  role         RoleName   @default(GAMER)
+  username     String?    @unique
+  image        String?
+  status       UserStatus @default(ACTIVE)
+  totalPoints  Int        @default(0)
+  xp           Int        @default(0)
+  level        Int        @default(1)
+  badges       Json       @default("[]")
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
 
   // Relations
   accounts  Account[]
@@ -27,9 +34,35 @@ model User {
   auditLogs AuditLog[]
 
   // Gaming-specific relations (for future expansion)
-  // tournaments Tournament[]
+  createdTournaments Tournament[] @relation("TournamentCreator")
+  tournamentParticipants TournamentParticipant[]
+  matchResults MatchResult[]
+  
+  // Social features relations
+  sentFriendships       Friendship[] @relation("FriendshipRequester")
+  receivedFriendships   Friendship[] @relation("FriendshipReceiver")
+  sentMessages          ChatMessage[] @relation("MessageSender")
+  receivedMessages      ChatMessage[] @relation("MessageReceiver")
+  notifications         Notification[]
+  
+  // Content relations
+  userContent           UserContent[] @relation("UserContent")
+  
+  // Video system relations
+  videoInteractions     VideoInteraction[]
+  videoQuizAttempts     VideoQuizAttempt[]
+  videoClips            VideoClip[]
+  videoClipLikes        VideoClipLike[]
+  
+  // Payment system relations
+  payments              Payment[]
+  subscriptions         Subscription[]
+  
+  // Merchant store relations
+  orders                Order[]     @relation("UserOrders")
+  purchases             Purchase[]  @relation("UserPurchases")
+  
   // videos Video[]
-  // orders Order[]
   // donations Donation[]
   // comments Comment[]
 
@@ -38,7 +71,7 @@ model User {
 
 // OAuth account information
 model Account {
-  id                String  @id @default(cuid())
+  id                String  @id @default(uuid())
   userId            String
   provider          String
   providerAccountId String
@@ -61,7 +94,7 @@ model Account {
 
 // Session model for NextAuth.js (optional - can use JWT only)
 model Session {
-  id           String   @id @default(cuid())
+  id           String   @id @default(uuid())
   sessionToken String   @unique
   userId       String
   expires      DateTime
@@ -75,7 +108,7 @@ model Session {
 
 // Role-based access control
 model Role {
-  id          String   @id @default(cuid())
+  id          String   @id @default(uuid())
   name        RoleName @unique
   description String?
   createdAt   DateTime @default(now())
@@ -90,7 +123,7 @@ model Role {
 
 // Many-to-many relationship between users and roles
 model UserRole {
-  id         String   @id @default(cuid())
+  id         String   @id @default(uuid())
   userId     String
   roleId     String
   assignedAt DateTime @default(now())
@@ -105,7 +138,7 @@ model UserRole {
 
 // Permission model
 model Permission {
-  id          String   @id @default(cuid())
+  id          String   @id @default(uuid())
   key         String   @unique // e.g., "user:read", "tournament:create"
   description String?
   createdAt   DateTime @default(now())
@@ -119,7 +152,7 @@ model Permission {
 
 // Many-to-many relationship between roles and permissions
 model RolePermission {
-  id           String   @id @default(cuid())
+  id           String   @id @default(uuid())
   roleId       String
   permissionId String
   createdAt    DateTime @default(now())
@@ -133,7 +166,7 @@ model RolePermission {
 
 // Audit log for tracking user actions
 model AuditLog {
-  id         String   @id @default(cuid())
+  id         String   @id @default(uuid())
   userId     String?
   action     String   // e.g., "user.created", "tournament.joined"
   resource   String   // e.g., "User", "Tournament"
@@ -170,113 +203,168 @@ enum RoleName {
   @@map("role_name")
 }
 
-// Future models for gaming platform features
-// These are commented out but show the intended structure
-
-/*
 // Tournament system
 model Tournament {
-  id          String   @id @default(cuid())
-  title       String
-  description String?
-  game        String
-  maxPlayers  Int
-  prizePool   Decimal?
-  status      TournamentStatus @default(UPCOMING)
-  startDate   DateTime
-  endDate     DateTime?
-  createdBy   String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id                    String   @id @default(uuid())
+  title                 String
+  description           String
+  game                  String
+  streamUrl             String?  // Twitch/YouTube stream URL
+  entryFee              Decimal? @db.Money // Entry fee for paid tournaments
+  currency              String   @default("USD") @db.VarChar(3)
+  maxParticipants       Int?     // Maximum number of participants
+  prizePool             Decimal? @db.Money // Total prize pool
+  startDate             DateTime
+  endDate               DateTime
+  createdById           String
+  isTecnoGamerzOfficial Boolean  @default(false)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
 
-  creator     User @relation(fields: [createdBy], references: [id])
+  createdBy    User                     @relation("TournamentCreator", fields: [createdById], references: [id])
   participants TournamentParticipant[]
+  matchResults MatchResult[]
 
   @@map("tournaments")
 }
 
 model TournamentParticipant {
-  id           String @id @default(cuid())
+  id           String   @id @default(uuid())
   tournamentId String
   userId       String
+  paymentId    String?  // Reference to payment for paid tournaments
+  isPaid       Boolean  @default(false) // Whether participant has paid entry fee
   joinedAt     DateTime @default(now())
-  rank         Int?
-  prize        Decimal?
 
   tournament Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
   user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([tournamentId, userId])
+  @@index([paymentId])
   @@map("tournament_participants")
 }
 
-// Video/Content system
-model Video {
-  id          String   @id @default(cuid())
-  title       String
-  description String?
-  url         String
-  thumbnail   String?
-  duration    Int?     // in seconds
-  views       Int      @default(0)
-  likes       Int      @default(0)
-  status      VideoStatus @default(PUBLISHED)
-  createdBy   String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+// Match result and scoring system
+model MatchResult {
+  id           String   @id @default(uuid())
+  tournamentId String
+  userId       String
+  score        Int
+  awardedPoints Int     // Final points awarded (with multiplier applied)
+  createdAt    DateTime @default(now())
 
-  creator  User @relation(fields: [createdBy], references: [id])
-  comments Comment[]
+  tournament Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@map("videos")
+  @@index([userId])
+  @@index([tournamentId])
+  @@index([createdAt])
+  @@map("match_results")
 }
 
-// Commerce system
+// User Content for sharing highlights and clips
+model UserContent {
+  id        String   @id @default(uuid())
+  userId    String
+  title     String
+  videoUrl  String
+  createdAt DateTime @default(now())
+
+  user User @relation("UserContent", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("user_content")
+}
+
+// Merchant Store System Models
+
+// Product model for digital and physical items
 model Product {
-  id          String   @id @default(cuid())
-  name        String
+  id          String      @id @default(uuid())
+  title       String
   description String?
-  price       Decimal
-  images      String[]
-  inventory   Int      @default(0)
-  status      ProductStatus @default(ACTIVE)
-  createdBy   String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  price       Int         // Price in cents (like Stripe)
+  currency    String      @default("USD") @db.VarChar(3)
+  stock       Int?        // null = digital/unlimited inventory
+  images      Json?       // Array of image URLs
+  type        ProductType
+  metadata    Json?       // Additional product data (badgeId, css, etc.)
+  isActive    Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
 
-  creator    User        @relation(fields: [createdBy], references: [id])
-  orderItems OrderItem[]
+  // Relations
+  orderItems  OrderItem[]
+  purchases   Purchase[]  @relation("ProductPurchases")
 
+  @@index([type])
+  @@index([isActive])
+  @@index([createdAt])
   @@map("products")
 }
 
+// Order model for tracking purchases
 model Order {
-  id          String   @id @default(cuid())
-  userId      String
-  total       Decimal
-  status      OrderStatus @default(PENDING)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id                String      @id @default(uuid())
+  userId            String?     // nullable for guest orders
+  totalAmount       Int         // Total amount in cents
+  currency          String      @default("USD") @db.VarChar(3)
+  status            OrderStatus @default(PENDING)
+  externalPaymentId String?     // Stripe payment intent ID
+  metadata          Json?       // Additional order data
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
 
-  user  User        @relation(fields: [userId], references: [id])
+  // Relations
+  user  User?       @relation("UserOrders", fields: [userId], references: [id], onDelete: SetNull)
   items OrderItem[]
 
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([externalPaymentId])
   @@map("orders")
 }
 
+// Order items for individual products in an order
 model OrderItem {
-  id        String  @id @default(cuid())
-  orderId   String
-  productId String
-  quantity  Int
-  price     Decimal
+  id              String @id @default(uuid())
+  orderId         String
+  productId       String
+  priceAtPurchase Int    // Price when purchased (historical)
+  quantity        Int
+  metadata        Json?  // Item-specific metadata
 
+  // Relations
   order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product Product @relation(fields: [productId], references: [id])
 
+  @@index([orderId])
+  @@index([productId])
   @@map("order_items")
 }
 
+// Purchase model for tracking digital goods ownership
+model Purchase {
+  id        String   @id @default(uuid())
+  userId    String
+  productId String
+  orderId   String?  // Reference to the order that created this purchase
+  grantedAt DateTime @default(now())
+  metadata  Json?    // Purchase-specific data
+
+  // Relations
+  user    User    @relation("UserPurchases", fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation("ProductPurchases", fields: [productId], references: [id])
+
+  @@unique([userId, productId])
+  @@index([userId])
+  @@index([productId])
+  @@map("purchases")
+}
+
+/* Future models - commented out until enums are implemented
 // Donation system
 model Donation {
   id        String   @id @default(cuid())
@@ -344,35 +432,388 @@ model Comment {
 
   @@map("comments")
 }
+*/
 
-// Additional enums for future features
+// Friends System
+model Friendship {
+  id          String           @id @default(uuid())
+  requesterId String
+  receiverId  String
+  status      FriendshipStatus @default(PENDING)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  requester User @relation("FriendshipRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+  receiver  User @relation("FriendshipReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@unique([requesterId, receiverId])
+  @@index([requesterId])
+  @@index([receiverId])
+  @@index([status])
+  @@map("friendships")
+}
+
+// Chat Messages for real-time messaging
+model ChatMessage {
+  id         String   @id @default(uuid())
+  senderId   String
+  receiverId String
+  content    String   @db.Text
+  isRead     Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  sender   User @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver User @relation("MessageReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@index([senderId])
+  @@index([receiverId])
+  @@index([createdAt])
+  @@index([isRead])
+  @@map("chat_messages")
+}
+
+// Notifications System
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  type      NotificationType
+  message   String
+  isRead    Boolean          @default(false)
+  metadata  Json?            // Additional data like friendshipId, messageId, etc.
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isRead])
+  @@index([type])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+// YouTube Channel Integration
+model Channel {
+  id         String   @id @default(uuid())
+  name       String
+  source     String   @default("youtube") // "youtube", "twitch", etc.
+  externalId String   @unique             // YouTube channel ID
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  // Relations
+  videos Video[]
+
+  @@index([source])
+  @@index([externalId])
+  @@map("channels")
+}
+
+// Video Content from YouTube/Twitch
+model Video {
+  id          String    @id @default(uuid())
+  title       String    @db.VarChar(255)
+  description String?   @db.Text
+  youtubeId   String    @unique
+  duration    Int?      // Duration in seconds
+  publishedAt DateTime?
+  thumbnails  Json?     // YouTube thumbnail URLs as JSON
+  tags        String[]  @default([])
+  transcript  String?   @db.Text
+  views       Int       @default(0) // Our platform views, not YouTube views
+  channelId   String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  channel             Channel             @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  videoInteractions   VideoInteraction[]
+  videoQuizzes        VideoQuiz[]
+  videoClips          VideoClip[]
+
+  @@index([youtubeId])
+  @@index([channelId])
+  @@index([publishedAt])
+  @@index([views])
+  @@index([tags])
+  @@map("videos")
+}
+
+// User interactions with videos
+model VideoInteraction {
+  id        String                @id @default(uuid())
+  userId    String
+  videoId   String
+  action    VideoInteractionType
+  progress  Int?                  @default(0) // Progress percentage for WATCH action
+  metadata  Json?                 // Additional data like clip timestamps
+  createdAt DateTime              @default(now())
+
+  // Relations
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  video Video @relation(fields: [videoId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, videoId, action])
+  @@index([userId])
+  @@index([videoId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("video_interactions")
+}
+
+// Video Quizzes for gamification
+model VideoQuiz {
+  id          String   @id @default(uuid())
+  videoId     String
+  title       String
+  description String?
+  questions   Json     // Array of quiz questions with options and correct answers
+  xpReward    Int      @default(50)
+  coinsReward Int      @default(10)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  video         Video               @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  quizAttempts  VideoQuizAttempt[]
+
+  @@index([videoId])
+  @@map("video_quizzes")
+}
+
+// User quiz attempts
+model VideoQuizAttempt {
+  id        String   @id @default(uuid())
+  userId    String
+  quizId    String
+  score     Int      // Percentage score
+  answers   Json     // User's answers
+  xpEarned  Int      @default(0)
+  coinsEarned Int    @default(0)
+  completedAt DateTime @default(now())
+
+  // Relations
+  user User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  quiz VideoQuiz @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, quizId])
+  @@index([userId])
+  @@index([quizId])
+  @@map("video_quiz_attempts")
+}
+
+// Video clips/highlights created by users
+model VideoClip {
+  id          String   @id @default(uuid())
+  userId      String
+  videoId     String
+  title       String
+  description String?
+  startTime   Int      // Start time in seconds
+  endTime     Int      // End time in seconds
+  isPublic    Boolean  @default(true)
+  views       Int      @default(0)
+  likes       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  video     Video       @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  clipLikes VideoClipLike[]
+
+  @@index([userId])
+  @@index([videoId])
+  @@index([isPublic])
+  @@index([createdAt])
+  @@map("video_clips")
+}
+
+// Video clip likes
+model VideoClipLike {
+  id     String @id @default(uuid())
+  userId String
+  clipId String
+  createdAt DateTime @default(now())
+
+  // Relations
+  user User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  clip VideoClip @relation(fields: [clipId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, clipId])
+  @@index([userId])
+  @@index([clipId])
+  @@map("video_clip_likes")
+}
+
+// Additional enums for tournament features
 enum TournamentStatus {
   UPCOMING
   ACTIVE
   COMPLETED
   CANCELLED
+
+  @@map("tournament_status")
 }
 
+// Social features enums
+enum FriendshipStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+
+  @@map("friendship_status")
+}
+
+enum NotificationType {
+  FRIEND_REQUEST
+  FRIEND_ACCEPTED
+  TOURNAMENT_START
+  TOURNAMENT_WIN
+  MESSAGE_RECEIVED
+  LEVEL_UP
+  BADGE_EARNED
+  VIDEO_WATCH_COMPLETE
+  VIDEO_QUIZ_COMPLETE
+
+  @@map("notification_type")
+}
+
+// Video interaction types
+enum VideoInteractionType {
+  WATCH
+  LIKE
+  COMMENT
+  CLIP
+  COMPLETE
+  QUIZ_ATTEMPT
+
+  @@map("video_interaction_type")
+}
+
+// Payment System Models
+
+// Payment model for tracking all payment transactions
+model Payment {
+  id                String        @id @default(uuid())
+  userId            String
+  amount            Decimal       @db.Money
+  currency          String        @default("USD") @db.VarChar(3)
+  type              PaymentType
+  status            PaymentStatus @default(PENDING)
+  externalPaymentId String?       // Stripe payment intent/charge ID
+  metadata          Json?         // Additional payment data (tournament id, product info, etc.)
+  stripeCheckoutSessionId String? // Stripe checkout session ID
+  refundedAmount    Decimal?      @db.Money
+  refundedAt        DateTime?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@index([type])
+  @@index([externalPaymentId])
+  @@index([createdAt])
+  @@map("payments")
+}
+
+// Subscription model for managing user subscriptions
+model Subscription {
+  id                   String             @id @default(uuid())
+  userId               String
+  stripeSubscriptionId String             @unique
+  stripeCustomerId     String
+  status               SubscriptionStatus
+  plan                 SubscriptionPlan
+  currentPeriodStart   DateTime
+  currentPeriodEnd     DateTime
+  cancelAtPeriodEnd    Boolean            @default(false)
+  canceledAt           DateTime?
+  startedAt            DateTime           @default(now())
+  endedAt              DateTime?
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@index([stripeSubscriptionId])
+  @@index([stripeCustomerId])
+  @@map("subscriptions")
+}
+
+// Payment enums
+enum PaymentType {
+  TOURNAMENT_FEE
+  PURCHASE
+  SUBSCRIPTION
+  AD
+  SHOP_PURCHASE    // New: merchant store purchases
+
+  @@map("payment_type")
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  CANCELED
+  REFUNDED
+
+  @@map("payment_status")
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  INCOMPLETE
+  INCOMPLETE_EXPIRED
+  TRIALING
+  UNPAID
+
+  @@map("subscription_status")
+}
+
+enum SubscriptionPlan {
+  BASIC
+  PRO
+  PREMIUM
+
+  @@map("subscription_plan")
+}
+
+// Merchant Store Enums
+enum ProductType {
+  COSMETIC      // Skins, themes, etc.
+  BADGE         // Achievement badges
+  DISCOUNT      // Discount coupons
+  PHYSICAL      // Physical merchandise
+
+  @@map("product_type")
+}
+
+enum OrderStatus {
+  PENDING       // Order created, payment pending
+  PAID          // Payment successful
+  FULFILLED     // Digital items granted / physical items shipped
+  CANCELLED     // Order cancelled
+  REFUNDED      // Order refunded
+
+  @@map("order_status")
+}
+
+// Future enums for gaming platform features
+/*
 enum VideoStatus {
   DRAFT
   PUBLISHED
   UNLISTED
   PRIVATE
-}
-
-enum ProductStatus {
-  ACTIVE
-  INACTIVE
-  OUT_OF_STOCK
-}
-
-enum OrderStatus {
-  PENDING
-  PAID
-  SHIPPED
-  DELIVERED
-  CANCELLED
-  REFUNDED
 }
 
 enum DonationStatus {

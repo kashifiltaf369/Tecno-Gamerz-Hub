@@ -21,4 +21,12 @@ export class UsersController {
   async findAll() {
     return this.usersService.findAll();
   }
+
+  @Get('profile/:id')
+  @ApiOperation({ summary: 'Get user profile with gamification data' })
+  @ApiResponse({ status: 200, description: 'User profile retrieved successfully' })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  async getUserProfile(@Param('id') id: string) {
+    return this.usersService.getUserProfile(id);
+  }
 }

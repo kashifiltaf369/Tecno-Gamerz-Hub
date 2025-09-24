@@ -1,0 +1,113 @@
+{
+  "metadata": {
+    "version": "1.0.0",
+    "description": "Sample products for Tecno Gamerz Hub merchant store",
+    "totalProducts": 20,
+    "categories": [
+      "Character Skins",
+      "Weapon Skins", 
+      "Badges & Achievements",
+      "Gaming Hardware",
+      "Apparel",
+      "Gaming Accessories",
+      "Tournament Passes",
+      "Bundle Packs"
+    ],
+    "types": {
+      "DIGITAL_COSMETIC": "Digital items like skins, badges, cosmetics",
+      "PHYSICAL_MERCHANDISE": "Physical items like hardware, apparel",
+      "TOURNAMENT_ITEM": "Tournament-related items and passes"
+    }
+  },
+  "products": [
+    {
+      "name": "Dragon Warrior Legendary Skin",
+      "description": "Transform your character into a legendary dragon warrior with this epic skin. Features unique animations, fire effects, and exclusive voice lines.",
+      "price": 49.99,
+      "type": "DIGITAL_COSMETIC",
+      "category": "Character Skins",
+      "imageUrl": "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=300&fit=crop",
+      "stock": null,
+      "metadata": {
+        "rarity": "legendary",
+        "badgeId": "dragon_warrior_badge",
+        "cosmeticId": "dragon_warrior_skin",
+        "effects": ["fire_aura", "wing_animation", "roar_sound"],
+        "compatibility": ["PUBG Mobile", "Free Fire", "Call of Duty Mobile"]
+      }
+    },
+    {
+      "name": "Tecno Gamerz Pro Gaming Headset",
+      "description": "Experience crystal-clear audio with our professional gaming headset. Features 7.1 surround sound, noise cancellation, and ergonomic design.",
+      "price": 199.99,
+      "type": "PHYSICAL_MERCHANDISE", 
+      "category": "Gaming Hardware",
+      "imageUrl": "https://images.unsplash.com/photo-1546435770-a3e426bf472b?w=400&h=300&fit=crop",
+      "stock": 75,
+      "metadata": {
+        "brand": "Tecno Gamerz",
+        "features": ["7.1 Surround Sound", "Noise Cancellation", "RGB Lighting"],
+        "warranty": "2 years"
+      }
+    },
+    {
+      "name": "Tournament Champion Badge 2024",
+      "description": "Exclusive badge for tournament champions. Show off your competitive prowess with this prestigious golden badge.",
+      "price": 19.99,
+      "type": "DIGITAL_COSMETIC",
+      "category": "Badges & Achievements", 
+      "imageUrl": "https://images.unsplash.com/photo-1567427017947-545c5f8d16ad?w=400&h=300&fit=crop",
+      "stock": null,
+      "metadata": {
+        "rarity": "legendary",
+        "badgeId": "tournament_champion_2024",
+        "effects": ["golden_glow", "champion_aura"]
+      }
+    },
+    {
+      "name": "Tournament Entry Pass - Pro League",
+      "description": "Gain exclusive access to the Tecno Gamerz Pro League tournament. Compete against the best players and win amazing prizes.",
+      "price": 99.99,
+      "type": "TOURNAMENT_ITEM",
+      "category": "Tournament Passes",
+      "imageUrl": "https://images.unsplash.com/photo-1560472355-536de3962603?w=400&h=300&fit=crop",
+      "stock": null,
+      "metadata": {
+        "tournament": "Tecno Gamerz Pro League 2024",
+        "prizePool": "$50,000",
+        "badgeId": "pro_league_participant_2024"
+      }
+    },
+    {
+      "name": "Welcome Badge - New Member",
+      "description": "Welcome to the Tecno Gamerz community! This free badge is our gift to all new members.",
+      "price": 0,
+      "type": "DIGITAL_COSMETIC",
+      "category": "Badges & Achievements",
+      "imageUrl": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=400&h=300&fit=crop", 
+      "stock": null,
+      "metadata": {
+        "rarity": "common",
+        "badgeId": "welcome_new_member",
+        "free_item": true,
+        "auto_grant": true
+      }
+    }
+  ],
+  "quickStart": {
+    "instructions": "Use this file to quickly populate your merchant store with sample products. Import via the seeding script or admin panel.",
+    "commands": [
+      "npm run seed-store",
+      "npm run seed-store -- --all",
+      "npm run seed-store -- --stats"
+    ]
+  },
+  "testScenarios": {
+    "outOfStock": "Some products have stock: 0 for testing",
+    "highValue": "Premium items over $200 for transaction testing", 
+    "freeItems": "Items with price: 0 for zero-cost flows",
+    "bundles": "Bundle products with multiple included items",
+    "digital": "Digital items with automatic fulfillment",
+    "physical": "Physical items with inventory management"
+  }
+}

@@ -5,6 +5,8 @@ export * from './db';
 export * from './logger';
 export * from './validation';
 export * from './storage';
+export * from './api-client';
+export * from './gamification';
 
 // Common utility functions
 export const sleep = (ms: number): Promise<void> =>
